@@ -7,14 +7,13 @@ const props = withDefaults(defineProps<{
     rounded?: '0' | 'xs' | 'sm' | 'lg' | 'xl'
 }>(),{
     text: 'ejemplo',
-    color: 'black',
     variant: 'outlined',
         
 })
 
 </script>
 <template>
-    <v-btn :color="color" :variant="variant" :rounded="rounded">
+    <v-btn :color="props.color" :variant="variant" :rounded="rounded">
         {{ text }}
     </v-btn>
 </template>
