@@ -40,5 +40,23 @@ export const useUser = () => {
     return response.json()
   }
 
-  return { getUsuarios, getUsuarioById }
+  async function updateUsuario(id: number, data: Partial<Usuario>): Promise<Usuario> {
+    const response = await fetch(`${urlUser}/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Error al actualizar usuario' }))
+      throw new Error(error.message ?? 'Error al actualizar usuario')
+    }
+
+    return response.json()
+  }
+
+  return { getUsuarios, getUsuarioById, updateUsuario }
 }

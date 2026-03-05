@@ -2,10 +2,30 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Logo from '@/components/Logo/Logo.vue'
+import EditProfileModal from '@/components/Profile/EditProfileModal.vue'
+import LogoutModal from '@/components/Profile/LogoutModal.vue'
 import { useUser } from '@/ApiCalls/useUser'
+import { useLogin } from '@/stores/LoginStore'
 
 const router = useRouter()
 const { getUsuarios, getUsuarioById } = useUser()
+
+const showEditModal   = ref(false)
+const showLogoutModal = ref(false)
+const loginStore = useLogin()
+
+function handleLogout() {
+  loginStore.logout()
+  localStorage.removeItem('auth_name')
+  localStorage.removeItem('auth_email')
+  router.push('/Login')
+}
+
+function onProfileSaved(newName: string, newEmail: string) {
+  if (userRaw.value) {
+    userRaw.value = { ...userRaw.value, nombre: newName, correo: newEmail }
+  }
+}
 
 const loading = ref(true)
 const errorMsg = ref('')
@@ -162,10 +182,16 @@ onMounted(async () => {
 
     <div class="profile-topbar">
       <Logo :width="60" :height="48" />
-      <button class="back-btn" @click="router.push('/Landing')">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Volver al Inicio
-      </button>
+      <div class="profile-topbar__right">
+        <button class="back-btn" @click="router.push('/Landing')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          Volver al Inicio
+        </button>
+        <button class="logout-btn" @click="showLogoutModal = true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+          Cerrar Sesión
+        </button>
+      </div>
     </div>
 
     <div class="profile-content">
@@ -184,6 +210,10 @@ onMounted(async () => {
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
           </span>
           <span class="profile-card__header-title">Información Personal</span>
+          <button class="edit-btn" @click="showEditModal = true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            Editar
+          </button>
         </div>
 
         <div class="info-list">
@@ -305,6 +335,21 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <LogoutModal
+      v-if="showLogoutModal"
+      @cancel="showLogoutModal = false"
+      @confirm="handleLogout"
+    />
+
+    <EditProfileModal
+      :visible="showEditModal"
+      :user-id="profile.id ? Number(profile.id) : null"
+      :current-name="profile.name"
+      :current-email="profile.email"
+      @close="showEditModal = false"
+      @saved="onProfileSaved"
+    />
   </div>
 </template>
 
@@ -323,6 +368,12 @@ onMounted(async () => {
   justify-content: space-between;
   padding: $space-sm $space-xl;
   border-bottom: 1px solid rgba($color-cyan, 0.08);
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+  }
 }
 
 .back-btn {
@@ -421,6 +472,49 @@ onMounted(async () => {
   color: $color-white;
 
   svg { width: 18px; height: 18px; }
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: $space-xs $space-md;
+  background: transparent;
+  border: 1.5px solid rgba($color-orange, 0.45);
+  border-radius: $radius-full;
+  color: $color-orange;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    background: rgba($color-orange, 0.1);
+    border-color: $color-orange;
+  }
+}
+
+.edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px $space-md;
+  background: transparent;
+  border: 1.5px solid rgba($color-cyan, 0.35);
+  border-radius: $radius-full;
+  color: $color-cyan;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  svg { width: 13px; height: 13px; }
+
+  &:hover {
+    background: rgba($color-cyan, 0.08);
+    border-color: $color-cyan;
+  }
 }
 
 .count-badge {
