@@ -11,6 +11,7 @@ import * as directives from 'vuetify/directives'
 // Internalizacion (i18n)
 import { i18n } from './i18n/i18n'
 
+const pinia = createPinia()
 const vuetify = createVuetify({
   components,
   directives,
@@ -44,7 +45,7 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 .use(vuetify)
 .use(i18n)
