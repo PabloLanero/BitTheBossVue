@@ -7,15 +7,10 @@ const { ApiUrl} = useConstants()
 export const useUser = () => {
     const urlUser = ApiUrl +'/Usuario'
 
-    function getUsuarios(): Usuario[]{
-        const header : any = {}
-        
-
-        let usuarios = await fetch(urlUser,{
-            headers: {
-
-            }
-        }) 
-
+    async function getUsuarios(): Promise<Usuario[]>{
+        const response = await fetch(urlUser, {
+            headers: {},
+        })
+        return response.json()
     } 
 }
