@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import Button from '@/components/Form/Button.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 </script>
 
 <template>
@@ -16,7 +18,7 @@ const { t } = useI18n();
         <div class="hero__card-left">
           <p class="hero__subtitle">{{ t('landing.heroSubtitle') }}</p>
           <div class="hero__actions">
-            <Button :text="t('landing.playDemo')" color="#1af0ff" variant="tonal"  rounded="xl" />
+            <Button :text="t('landing.playDemo')" color="#1af0ff" variant="tonal"  rounded="xl" @click="router.push('/Login')" />
             <Button :text="t('landing.learnMore')" color="#e8f8ff" variant="outlined" rounded="xl" />
           </div>
         </div>

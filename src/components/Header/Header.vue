@@ -16,8 +16,8 @@ import Logo from '@/components/Logo/Logo.vue';
         <RouterLink to="#community" class="nav-link">{{ $t('header.community') }}</RouterLink>
       </nav>
 
-      <RouterLink to="#preorder" class="preorder-btn">
-        {{ $t('header.preorder') }}
+      <RouterLink to="/Login" class="preorder-btn">
+        {{ $t('header.login') }}
       </RouterLink>
     </div>
   </header>
