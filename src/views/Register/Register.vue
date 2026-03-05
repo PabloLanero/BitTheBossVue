@@ -27,9 +27,11 @@ async function handleSubmit() {
   try {
     const data: Register = { userName: userName.value, email: email.value, password: password.value }
     await registerStore.register(data)
-    router.push('/Login')
-  } catch {
-    errorMsg.value = 'Error al crear la cuenta. Inténtalo de nuevo.'
+    localStorage.setItem('auth_name', data.userName)
+    localStorage.setItem('auth_email', data.email)
+    router.push('/Profile')
+  } catch (error) {
+    errorMsg.value = error instanceof Error ? error.message : 'Error al crear la cuenta. Inténtalo de nuevo.'
   } finally {
     loading.value = false
   }

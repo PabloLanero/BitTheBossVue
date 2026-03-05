@@ -28,8 +28,18 @@ const router = createRouter({
     {
       path: '/Profile',
       component: import('@/views/Profile/Profile.vue'),
+      meta: { requiresAuth: true },
     }
   ],
+})
+
+router.beforeEach((to) => {
+  if (!to.meta.requiresAuth) return true
+
+  const token = localStorage.getItem('token')
+  if (token) return true
+
+  return '/Login'
 })
 
 export default router

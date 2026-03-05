@@ -21,9 +21,10 @@ async function handleSubmit() {
   try {
     const credentials: Login = { email: email.value, password: password.value }
     await loginStore.login(credentials)
-    router.push('/Landing')
-  } catch {
-    errorMsg.value = 'Credenciales incorrectas. Inténtalo de nuevo.'
+    localStorage.setItem('auth_email', credentials.email)
+    router.push('/Profile')
+  } catch (error) {
+    errorMsg.value = error instanceof Error ? error.message : 'Credenciales incorrectas. Inténtalo de nuevo.'
   } finally {
     loading.value = false
   }

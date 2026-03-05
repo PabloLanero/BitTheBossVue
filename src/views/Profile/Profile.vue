@@ -1,38 +1,160 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Logo from '@/components/Logo/Logo.vue'
-import type { Usuario } from '@/models/Usuario'
-import type { Tier } from '@/models/Tier'
-import type { Partida } from '@/models/Partida'
+import { useUser } from '@/ApiCalls/useUser'
 
 const router = useRouter()
+const { getUsuarios, getUsuarioById } = useUser()
 
-// Mock data — se reemplazará con llamada a la API
-const usuario: Usuario = {
-  usuarioId: 12345,
-  nombre: 'Circuit Master',
-  correo: 'player@battleboard.com',
-  visible: true,
-  fechaCreacion: new Date('2024-01-15'),
-  rol: 'PREMIUM',
-  tier: {
-    id: 3,
-    titulo: 'Diamond Commander',
-    fechaCreacion: new Date('2024-01-15'),
-    visible: true,
-  } as Tier,
-  partidas: [
-    { idPartida: 'GAME-2024-001', arrUsuario: [{ usuarioId: 1 } as Usuario] },
-    { idPartida: 'GAME-2024-002', arrUsuario: [{ usuarioId: 1 } as Usuario] },
-    { idPartida: 'GAME-2024-003', arrUsuario: [{ usuarioId: 1 } as Usuario] },
-    { idPartida: 'GAME-2024-004', arrUsuario: [{ usuarioId: 1 } as Usuario, { usuarioId: 2 } as Usuario] },
-    { idPartida: 'GAME-2024-005', arrUsuario: [{ usuarioId: 1 } as Usuario, { usuarioId: 2 } as Usuario, { usuarioId: 3 } as Usuario] },
-  ] as Partida[],
+const loading = ref(true)
+const errorMsg = ref('')
+const userRaw = ref<Record<string, any> | null>(null)
+const tokenClaims = ref<Record<string, any> | null>(null)
+
+function parseJwt(token: string): Record<string, any> | null {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const json = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
+        .join(''),
+    )
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
 }
 
-function formatDate(date: Date): string {
+function claim(claims: Record<string, any> | null, keys: string[]): string | null {
+  if (!claims) return null
+  for (const key of keys) {
+    const value = claims[key]
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return String(value)
+    }
+  }
+  return null
+}
+
+const profile = computed(() => {
+  const u = userRaw.value ?? {}
+  const c = tokenClaims.value ?? {}
+  const fallbackName = localStorage.getItem('auth_name')
+  const fallbackEmail = localStorage.getItem('auth_email')
+
+  const claimId = c.nameid
+    ?? c.sub
+    ?? c.userId
+    ?? c.userid
+    ?? c.id
+    ?? c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+
+  const claimName = c.unique_name ?? c.name
+  const claimEmail = c.email ?? c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
+  const claimRole = c.role ?? c['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+
+  return {
+    id: u.usuarioId ?? u.userId ?? claimId ?? null,
+    name: u.nombre ?? u.userName ?? claimName ?? fallbackName ?? null,
+    email: u.correo ?? u.email ?? claimEmail ?? fallbackEmail ?? null,
+    role: u.rol ?? u.role ?? claimRole ?? null,
+    createdAt: u.fechaCreacion ?? u.createdAt ?? null,
+    tierTitle: u.tier?.titulo ?? u.tier?.tituloTier ?? u.tier?.title ?? null,
+    tierLevel: u.tier?.id ?? null,
+    partidas: Array.isArray(u.partidas) ? u.partidas : [],
+  }
+})
+
+function noData(value: unknown): string {
+  if (value === null || value === undefined) return 'No data'
+  const text = String(value).trim()
+  return text.length > 0 ? text : 'No data'
+}
+
+function roleClass(roleValue: unknown): string {
+  const role = String(roleValue ?? '').toLowerCase()
+  if (role === 'premium' || role === 'admin' || role === 'user') {
+    return `role-badge--${role}`
+  }
+  return 'role-badge--empty'
+}
+
+async function loadProfile(): Promise<void> {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    router.push('/Login')
+    return
+  }
+
+  const claims = parseJwt(token)
+  tokenClaims.value = claims
+  const idClaim = claim(claims, [
+    'nameid',
+    'sub',
+    'userId',
+    'userid',
+    'id',
+    'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier',
+  ])
+  const emailClaim = claim(claims, [
+    'email',
+    'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+  ])
+  const nameClaim = claim(claims, ['unique_name', 'name'])
+
+  if (idClaim && !Number.isNaN(Number(idClaim))) {
+    userRaw.value = await getUsuarioById(Number(idClaim))
+    return
+  }
+
+  const usuarios = await getUsuarios()
+  const match = usuarios.find((u: any) =>
+    (emailClaim && (u.correo === emailClaim || u.email === emailClaim))
+    || (nameClaim && (u.nombre === nameClaim || u.userName === nameClaim)),
+  )
+
+  userRaw.value = match ?? usuarios[0] ?? null
+}
+
+function formatDate(dateValue: string | Date | null): string {
+  if (!dateValue) return 'No data'
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) return 'No data'
   return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
 }
+
+function playersCount(partida: any): number {
+  if (Array.isArray(partida?.arrUsuario)) return partida.arrUsuario.length
+  return 0
+}
+
+onMounted(async () => {
+  loading.value = true
+  errorMsg.value = ''
+  try {
+    await loadProfile()
+    if (!userRaw.value) {
+      errorMsg.value = 'No se encontraron datos de usuario para esta sesión.'
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'No se pudo cargar el perfil'
+    if (msg.toLowerCase().includes('failed to fetch')) {
+      errorMsg.value = 'No se pudo conectar con el backend para cargar el perfil completo. Mostrando datos disponibles.'
+    } else {
+      errorMsg.value = msg
+    }
+    if (msg.toLowerCase().includes('token') || msg.toLowerCase().includes('autentic')) {
+      localStorage.removeItem('token')
+      router.push('/Login')
+    }
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
@@ -52,6 +174,9 @@ function formatDate(date: Date): string {
         <p class="profile-hero__subtitle">Gestiona tu información y estadísticas</p>
       </div>
 
+      <div v-if="errorMsg" class="profile-card profile-state profile-state--error">
+        {{ errorMsg }}
+      </div>
       <!-- Información Personal -->
       <div class="profile-card">
         <div class="profile-card__header">
@@ -68,7 +193,7 @@ function formatDate(date: Date): string {
             </span>
             <div class="info-row__content">
               <span class="info-row__label">Nombre de Usuario</span>
-              <span class="info-row__value">{{ usuario.nombre }}</span>
+              <span class="info-row__value">{{ loading ? 'Cargando...' : noData(profile.name) }}</span>
             </div>
           </div>
 
@@ -78,7 +203,7 @@ function formatDate(date: Date): string {
             </span>
             <div class="info-row__content">
               <span class="info-row__label">Correo Electrónico</span>
-              <span class="info-row__value">{{ usuario.correo }}</span>
+              <span class="info-row__value">{{ loading ? 'Cargando...' : noData(profile.email) }}</span>
             </div>
           </div>
 
@@ -88,7 +213,7 @@ function formatDate(date: Date): string {
             </span>
             <div class="info-row__content">
               <span class="info-row__label">ID de Usuario</span>
-              <span class="info-row__value">#{{ usuario.usuarioId }}</span>
+              <span class="info-row__value">{{ loading ? 'Cargando...' : (profile.id ? `#${profile.id}` : 'No data') }}</span>
             </div>
           </div>
 
@@ -98,8 +223,8 @@ function formatDate(date: Date): string {
             </span>
             <div class="info-row__content">
               <span class="info-row__label">Rol</span>
-              <span class="role-badge" :class="`role-badge--${usuario.rol.toLowerCase()}`">
-                {{ usuario.rol }}
+              <span class="role-badge" :class="roleClass(profile.role)">
+                {{ loading ? 'Cargando...' : noData(profile.role ? String(profile.role).toUpperCase() : null) }}
               </span>
             </div>
           </div>
@@ -110,7 +235,7 @@ function formatDate(date: Date): string {
             </span>
             <div class="info-row__content">
               <span class="info-row__label">Miembro Desde</span>
-              <span class="info-row__value">{{ formatDate(usuario.fechaCreacion) }}</span>
+              <span class="info-row__value">{{ loading ? 'Cargando...' : formatDate(profile.createdAt) }}</span>
             </div>
           </div>
         </div>
@@ -128,11 +253,11 @@ function formatDate(date: Date): string {
         <div class="rank-body">
           <div>
             <p class="rank-body__label">Tier Actual</p>
-            <p class="rank-body__value">{{ usuario.tier?.titulo }}</p>
+            <p class="rank-body__value">{{ loading ? 'Cargando...' : noData(profile.tierTitle) }}</p>
           </div>
           <div class="rank-body__level">
             <p class="rank-body__label">Nivel</p>
-            <p class="rank-body__level-num">{{ usuario.tier?.id }}</p>
+            <p class="rank-body__level-num">{{ loading ? '-' : noData(profile.tierLevel) }}</p>
           </div>
         </div>
       </div>
@@ -144,25 +269,41 @@ function formatDate(date: Date): string {
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5S14.67 12 15.5 12s1.5.67 1.5 1.5S16.33 15 15.5 15zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5S19.33 12 18.5 12z"/></svg>
           </span>
           <span class="profile-card__header-title">Historial de Partidas</span>
-          <span class="count-badge">{{ usuario.partidas?.length }}</span>
+          <span class="count-badge">{{ loading ? '-' : profile.partidas.length }}</span>
         </div>
 
         <div class="game-list">
+          <div v-if="loading" class="game-row">
+            <span class="game-row__num">-</span>
+            <div class="game-row__info">
+              <span class="game-row__id">Cargando...</span>
+              <span class="game-row__players">Cargando...</span>
+            </div>
+            <button class="detail-btn" disabled>Ver Detalles</button>
+          </div>
           <div
-            v-for="(partida, i) in usuario.partidas"
+            v-else
+            v-for="(partida, i) in profile.partidas"
             :key="partida.idPartida"
             class="game-row"
           >
             <span class="game-row__num">{{ i + 1 }}</span>
             <div class="game-row__info">
               <span class="game-row__id">{{ partida.idPartida }}</span>
-              <span class="game-row__players">{{ partida.arrUsuario?.length }} jugador(es)</span>
+              <span class="game-row__players">{{ playersCount(partida) }} jugador(es)</span>
             </div>
             <button class="detail-btn">Ver Detalles</button>
           </div>
+          <div v-if="!loading && profile.partidas.length === 0" class="game-row">
+            <span class="game-row__num">-</span>
+            <div class="game-row__info">
+              <span class="game-row__id">No data</span>
+              <span class="game-row__players">No hay partidas registradas</span>
+            </div>
+            <button class="detail-btn" disabled>Ver Detalles</button>
+          </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -213,6 +354,16 @@ function formatDate(date: Date): string {
   display: flex;
   flex-direction: column;
   gap: $space-lg;
+}
+
+.profile-state {
+  padding: $space-xl;
+  text-align: center;
+  color: rgba($color-white, 0.75);
+
+  &--error {
+    color: #ff9b9b;
+  }
 }
 
 .profile-hero {
@@ -353,6 +504,12 @@ function formatDate(date: Date): string {
     color: rgba($color-white, 0.6);
     border: 1px solid rgba($color-white, 0.15);
   }
+
+  &--empty {
+    background: rgba($color-white, 0.06);
+    color: rgba($color-white, 0.6);
+    border: 1px solid rgba($color-white, 0.12);
+  }
 }
 
 // ── Rank ─────────────────────────────────────────────────
@@ -448,6 +605,11 @@ function formatDate(date: Date): string {
   &:hover {
     background: rgba($color-cyan, 0.08);
     border-color: $color-cyan;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 </style>
