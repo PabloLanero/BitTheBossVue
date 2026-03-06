@@ -3,12 +3,14 @@ import { useConstants } from '@/stores/Constants'
 
 export const useUser = () => {
   const { ApiUrl } = useConstants()
-  const urlUser = ApiUrl + '/Usuario'
+  const urlUser = `${ApiUrl}/Usuario`
+
   function getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token')
     if (!token) {
-      throw new Error('No hay token de autenticación')
+      throw new Error('No hay token de autenticacion')
     }
+
     return {
       Authorization: `Bearer ${token}`,
     }

@@ -6,11 +6,11 @@ const router = createRouter({
     {
       path: '/',
       redirect: '/Landing',
-      component: import('@/views/Main.vue'),
+      component: () => import('@/views/Main.vue'),
       children: [
         {
           path: '/Landing',
-          component: import('@/views/Landing/Landing.vue'),
+          component: () => import('@/views/Landing/Landing.vue'),
           meta: {
             miVariable: 'SuValor'
           }
@@ -19,17 +19,22 @@ const router = createRouter({
     },
     {
       path: '/Login',
-      component: import('@/views/Login/Login.vue'),
+      component: () => import('@/views/Login/Login.vue'),
     },
     {
       path: '/Register',
-      component: import('@/views/Register/Register.vue'),
+      component: () => import('@/views/Register/Register.vue'),
     },
     {
       path: '/Profile',
-      component: import('@/views/Profile/Profile.vue'),
+      component: () => import('@/views/Profile/Profile.vue'),
       meta: { requiresAuth: true },
-    }
+    },
+    {
+      path: '/unity',
+      component: () => import('@/views/Unity/UnityGame.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

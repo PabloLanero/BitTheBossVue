@@ -1,21 +1,45 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import  { useConstants } from './Constants'
+import { useConstants } from './Constants'
 import type { Register } from '@/models/DTO/RegisterDTO'
+import { clearSessionToken, readStoredSessionToken, updateSessionToken } from '@/services/unityBridge'
 
 export const useRegister = defineStore('jwt', () => {
   const { ApiUrl } = useConstants()
-  const jwt = ref<string>(localStorage.getItem('token') ?? '')
+  const jwt = ref<string>(readStoredSessionToken() || localStorage.getItem('token') || '')
   const isAuthenticated = computed(() => jwt.value.length > 0)
 
-  async function register(register: Register): Promise<void> {
-    const res = await fetch(ApiUrl + '/Login/register', {
+  function setJwtToken(token?: string | null): void {
+    const nextToken = token ?? ''
+    jwt.value = nextToken
+
+    if (nextToken) {
+      localStorage.setItem('token', nextToken)
+    } else {
+      localStorage.removeItem('token')
+    }
+
+    updateSessionToken(nextToken)
+  }
+
+  function refreshJwtToken(token?: string | null): void {
+    setJwtToken(token)
+  }
+
+  function logout(): void {
+    jwt.value = ''
+    localStorage.removeItem('token')
+    clearSessionToken()
+  }
+
+  async function register(registerData: Register): Promise<void> {
+    const res = await fetch(`${ApiUrl}/Login/register`, {
       method: 'POST',
       headers: {
         accept: '*/*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(register),
+      body: JSON.stringify(registerData),
     })
 
     if (!res.ok) {
@@ -23,15 +47,22 @@ export const useRegister = defineStore('jwt', () => {
       throw new Error(error.message ?? 'Error al registrar usuario')
     }
 
-    const data = await res.json() as { token?: string }
-    jwt.value = data.token ?? ''
+    const data = (await res.json()) as unknown
+    const token =
+      typeof data === 'string'
+        ? data
+        : typeof data === 'object' && data !== null && 'token' in data
+          ? typeof (data as { token?: unknown }).token === 'string'
+            ? ((data as { token?: string }).token ?? '')
+            : ((data as { token?: { result?: string } }).token?.result ?? '')
+          : ''
 
-    if (!jwt.value) {
-      throw new Error('El backend no devolvió un token válido')
+    if (!token) {
+      throw new Error('El backend no devolvio un token valido')
     }
 
-    localStorage.setItem('token', jwt.value)
+    setJwtToken(token)
   }
 
-  return { jwt, isAuthenticated, register }
+  return { ApiUrl, jwt, isAuthenticated, register, setJwtToken, refreshJwtToken, logout }
 })

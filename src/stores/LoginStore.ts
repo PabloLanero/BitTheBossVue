@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useConstants } from './Constants'
 import type { Login } from '@/models/DTO/LoginDTO'
+import { clearSessionToken, updateSessionToken } from '@/services/unityBridge'
 
 export const useLogin = defineStore('login', () => {
   const { ApiUrl } = useConstants()
@@ -23,19 +24,26 @@ export const useLogin = defineStore('login', () => {
       throw new Error(error.message ?? 'Error al iniciar sesión')
     }
 
-    const data = await res.json() as { token?: string }
-    jwt.value = data.token ?? ''
+    const data = (await res.json()) as unknown
+    jwt.value =
+      typeof data === 'string'
+        ? data
+        : typeof data === 'object' && data !== null && 'token' in data
+          ? String((data as { token?: unknown }).token ?? '')
+          : ''
 
     if (!jwt.value) {
       throw new Error('El backend no devolvió un token válido')
     }
 
     localStorage.setItem('token', jwt.value)
+    updateSessionToken(jwt.value)
   }
 
   function logout(): void {
     jwt.value = ''
     localStorage.removeItem('token')
+    clearSessionToken()
   }
 
   return { jwt, isAuthenticated, login, logout }
