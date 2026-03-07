@@ -13,7 +13,7 @@ const { ApiUrl } = useConstants()
 
 const gameName = ref('')
 const opponentMode = ref<'ia' | 'player'>('ia')
-const difficulty = ref<'Facil' | 'Normal' | 'Dificil'>('Normal')
+const difficulty = ref<'Easy' | 'Normal' | 'Hard'>('Normal')
 const rivalUserId = ref<number | null>(null)
 const INITIAL_MONEY_PLAYER1 = 100
 const INITIAL_MONEY_PLAYER2 = 100
@@ -37,13 +37,13 @@ function buildIdPartida(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  return `${slug || 'partida'}-${Date.now()}`
+  return `${slug || 'match'}-${Date.now()}`
 }
 
 async function handleCreate(): Promise<void> {
   errorMsg.value = ''
   if (!canCreate.value) {
-    errorMsg.value = 'Completa los campos obligatorios.'
+    errorMsg.value = 'Please fill in all required fields.'
     return
   }
 
@@ -61,11 +61,11 @@ async function handleCreate(): Promise<void> {
     await createPartida(payload)
 
     const opponentLabel =
-      opponentMode.value === 'ia' ? `VS IA - ${difficulty.value}` : `VS Usuario #${secondUser}`
+      opponentMode.value === 'ia' ? `VS AI - ${difficulty.value}` : `VS Player #${secondUser}`
 
     const token = localStorage.getItem('token') ?? ''
     router.push({
-      path: '/unity',
+      path: '/game',
       query: {
         partidaId: idPartida,
         gameName: gameName.value.trim(),
@@ -77,7 +77,7 @@ async function handleCreate(): Promise<void> {
       },
     })
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'No se pudo crear la partida'
+    errorMsg.value = error instanceof Error ? error.message : 'Could not create the match'
   } finally {
     loading.value = false
   }
@@ -88,42 +88,42 @@ async function handleCreate(): Promise<void> {
   <Header />
   <section class="create-page">
     <div class="create-shell">
-      <h1>Nueva Partida</h1>
-      <p>Configura los parametros y lanza una partida nueva.</p>
+      <h1>New Match</h1>
+      <p>Configure the parameters and launch a new match.</p>
 
       <form class="form" @submit.prevent="handleCreate">
         <label>
-          Nombre de la partida
-          <input v-model="gameName" type="text" placeholder="Mi partida contra IA" required />
+          Match Name
+          <input v-model="gameName" type="text" placeholder="My match against AI" required />
         </label>
 
         <label>
-          Modo contrincante
+          Opponent Mode
           <select v-model="opponentMode">
-            <option value="ia">VS IA</option>
-            <option value="player">VS Usuario</option>
+            <option value="ia">VS AI</option>
+            <option value="player">VS Player</option>
           </select>
         </label>
 
         <label v-if="opponentMode === 'ia'">
-          Dificultad IA
+          AI Difficulty
           <select v-model="difficulty">
-            <option value="Facil">Facil</option>
+            <option value="Easy">Easy</option>
             <option value="Normal">Normal</option>
-            <option value="Dificil">Dificil</option>
+            <option value="Hard">Hard</option>
           </select>
         </label>
 
         <label v-else>
-          ID de usuario rival
+          Rival User ID
           <input v-model.number="rivalUserId" type="number" min="1" required />
         </label>
 
         <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
         <div class="actions">
-          <button type="button" class="secondary" @click="router.push('/game')">Volver</button>
-          <button type="submit" :disabled="loading || !canCreate">{{ loading ? 'Abriendo...' : 'Jugar nueva partida' }}</button>
+          <button type="button" class="secondary" @click="router.push('/history')">Back</button>
+          <button type="submit" :disabled="loading || !canCreate">{{ loading ? 'Opening...' : 'Play New Match' }}</button>
         </div>
       </form>
     </div>

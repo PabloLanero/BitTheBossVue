@@ -7,36 +7,36 @@
           <h1>BitTheBoss</h1>
           <p>Unity WebGL</p>
         </div>
-        <button class="finish-btn" type="button" @click="openExitModal">Terminar partida</button>
+        <button class="finish-btn" type="button" @click="openExitModal">End Match</button>
       </header>
 
       <div class="unity-wrapper">
         <canvas ref="canvasRef" id="unity-canvas"></canvas>
         <div v-if="loading" class="loading-overlay">
-          <p>Cargando Unity...</p>
+          <p>Loading Unity...</p>
         </div>
         <div v-if="error" class="error-overlay">
-          <p>Error cargando Unity: {{ error }}</p>
+          <p>Error loading Unity: {{ error }}</p>
         </div>
       </div>
 
       <div v-if="showExitModal" class="modal-backdrop">
         <div class="modal-card">
-          <h3>Terminar partida</h3>
-          <p>Selecciona el estado con el que quieres registrar la partida en el historial.</p>
+          <h3>End Match</h3>
+          <p>Select the status to register for this match in the history.</p>
           <p v-if="exitError" class="modal-error">{{ exitError }}</p>
           <div class="modal-actions">
             <button type="button" class="modal-btn secondary" :disabled="exiting" @click="cancelExitModal">
-              Cancelar
+              Cancel
             </button>
-            <button type="button" class="modal-btn victory" :disabled="exiting" @click="finishMatch('Victoria')">
-              Victoria
+            <button type="button" class="modal-btn victory" :disabled="exiting" @click="finishMatch('Win')">
+              Win
             </button>
-            <button type="button" class="modal-btn defeat" :disabled="exiting" @click="finishMatch('Derrota')">
-              Derrota
+            <button type="button" class="modal-btn defeat" :disabled="exiting" @click="finishMatch('Loss')">
+              Loss
             </button>
-            <button type="button" class="modal-btn cancel" :disabled="exiting" @click="finishMatch('Cancelada')">
-              Cancelada
+            <button type="button" class="modal-btn cancel" :disabled="exiting" @click="finishMatch('Cancelled')">
+              Cancelled
             </button>
           </div>
         </div>
@@ -122,7 +122,7 @@ function requestUnityPause(paused: boolean): void {
       paused ? 'PauseGameForModal' : 'ResumeGameAfterModal',
     )
   } catch (pauseError) {
-    console.warn('[UnityGame] No se pudo pausar/reanudar Unity:', pauseError)
+    console.warn('[UnityGame] Could not pause/resume Unity:', pauseError)
   }
 }
 
@@ -154,7 +154,7 @@ async function teardownUnity(reason: string): Promise<void> {
       await instance.Quit()
     }
   } catch (quitError) {
-    console.warn('[UnityGame] Error cerrando Unity:', quitError)
+    console.warn('[UnityGame] Error closing Unity:', quitError)
   } finally {
     hasUnityBooted = false
     isTearingDown = false
@@ -175,18 +175,18 @@ async function finishMatch(status: MatchResultStatus): Promise<void> {
     addHistoryEntry({
       partidaId,
       partidaNombre: partidaNombreQuery || partidaId,
-      opponentLabel: opponentLabelQuery || 'VS IA - Normal',
+      opponentLabel: opponentLabelQuery || 'VS AI - Normal',
       status,
     })
 
     showExitModal.value = false
     requestUnityPause(false)
     await teardownUnity('finish-match')
-    await router.push('/game')
+    await router.push('/history')
   } catch (finishError) {
     exiting.value = false
     exitError.value =
-      finishError instanceof Error ? finishError.message : 'No se pudo terminar la partida'
+      finishError instanceof Error ? finishError.message : 'Could not end the match'
     requestUnityPause(false)
   }
 }
@@ -195,7 +195,7 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
   if (hasUnityBooted) return
 
   if (typeof window.createUnityInstance === 'undefined') {
-    error.value = 'createUnityInstance no esta disponible despues de cargar el loader'
+    error.value = 'createUnityInstance is not available after loading the loader'
     loading.value = false
     return
   }
@@ -217,14 +217,14 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
       localUnityInstance = unityInstance
       registerUnityInstance(unityInstance)
       sendTokenToUnity(readStoredSessionToken())
-      devLog('Unity iniciado correctamente')
+      devLog('Unity initialized successfully')
       loading.value = false
     })
     .catch((err: unknown) => {
       hasUnityBooted = false
       const errorMessage =
-        err instanceof Error ? err.message : typeof err === 'string' ? err : 'Error desconocido'
-      console.error('[UnityGame] Error iniciando Unity:', err)
+        err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error'
+      console.error('[UnityGame] Error starting Unity:', err)
       error.value = errorMessage
       loading.value = false
     })
@@ -238,12 +238,12 @@ onMounted(async () => {
 
     const canvas = canvasRef.value
     if (!canvas) {
-      error.value = 'No se pudo obtener referencia al canvas'
+      error.value = 'Could not get reference to canvas'
       return
     }
 
     const handleLoaderReady = () => {
-      devLog('Unity loader cargado', {
+      devLog('Unity loader ready', {
         canvasId: canvas.id,
         loaderSrc: UNITY_LOADER_SRC,
         unityAvailable: typeof window.createUnityInstance !== 'undefined',
@@ -252,9 +252,9 @@ onMounted(async () => {
     }
 
     const handleLoaderError = () => {
-      error.value = 'Error al cargar el script del loader de Unity'
+      error.value = 'Error loading the Unity loader script'
       loading.value = false
-      console.error('[UnityGame] Error cargando script loader:', UNITY_LOADER_SRC)
+      console.error('[UnityGame] Error loading loader script:', UNITY_LOADER_SRC)
     }
 
     let loaderScript = document.getElementById(UNITY_LOADER_ID) as HTMLScriptElement | null
@@ -273,9 +273,9 @@ onMounted(async () => {
       loaderScript.addEventListener('error', handleLoaderError, { once: true })
     }
   } catch (err: unknown) {
-    error.value = `Error inesperado: ${err instanceof Error ? err.message : String(err)}`
+    error.value = `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
     loading.value = false
-    console.error('[UnityGame] Error en onMounted:', err)
+    console.error('[UnityGame] Error in onMounted:', err)
   }
 })
 

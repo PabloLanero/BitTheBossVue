@@ -43,8 +43,8 @@ export const useRegister = defineStore('jwt', () => {
     })
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Error al registrar usuario' }))
-      throw new Error(error.message ?? 'Error al registrar usuario')
+      const error = await res.json().catch(() => ({ message: 'Registration error' }))
+      throw new Error(error.message ?? 'Registration error')
     }
 
     const data = (await res.json()) as unknown
@@ -58,7 +58,7 @@ export const useRegister = defineStore('jwt', () => {
           : ''
 
     if (!token) {
-      throw new Error('El backend no devolvio un token valido')
+      throw new Error('The backend did not return a valid token')
     }
 
     setJwtToken(token)

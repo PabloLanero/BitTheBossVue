@@ -8,7 +8,7 @@ export const useUser = () => {
   function getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token')
     if (!token) {
-      throw new Error('No hay token de autenticacion')
+      throw new Error('No authentication token')
     }
 
     return {
@@ -22,8 +22,8 @@ export const useUser = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error al obtener usuarios' }))
-      throw new Error(error.message ?? 'Error al obtener usuarios')
+      const error = await response.json().catch(() => ({ message: 'Error fetching users' }))
+      throw new Error(error.message ?? 'Error fetching users')
     }
 
     return response.json()
@@ -35,8 +35,8 @@ export const useUser = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error al obtener usuario' }))
-      throw new Error(error.message ?? 'Error al obtener usuario')
+      const error = await response.json().catch(() => ({ message: 'Error fetching user' }))
+      throw new Error(error.message ?? 'Error fetching user')
     }
 
     return response.json()
@@ -53,8 +53,8 @@ export const useUser = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error al actualizar usuario' }))
-      throw new Error(error.message ?? 'Error al actualizar usuario')
+      const error = await response.json().catch(() => ({ message: 'Error updating user' }))
+      throw new Error(error.message ?? 'Error updating user')
     }
 
     return response.json()

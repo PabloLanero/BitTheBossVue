@@ -17,7 +17,7 @@ export const usePartida = () => {
 
   function getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token')
-    if (!token) throw new Error('No hay sesion activa')
+    if (!token) throw new Error('No active session')
     return {
       Authorization: `Bearer ${token}`,
     }
@@ -34,8 +34,8 @@ export const usePartida = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error al crear la partida' }))
-      throw new Error(error.message ?? 'Error al crear la partida')
+      const error = await response.json().catch(() => ({ message: 'Error creating match' }))
+      throw new Error(error.message ?? 'Error creating match')
     }
 
     const data = (await response.json()) as PartidaCreatedResponse
@@ -48,8 +48,8 @@ export const usePartida = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error al cargar partidas' }))
-      throw new Error(error.message ?? 'Error al cargar partidas')
+      const error = await response.json().catch(() => ({ message: 'Error loading matches' }))
+      throw new Error(error.message ?? 'Error loading matches')
     }
 
     return (await response.json()) as PartidaListItem[]

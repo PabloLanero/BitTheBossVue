@@ -1,4 +1,4 @@
-export type MatchResultStatus = 'Victoria' | 'Derrota' | 'Cancelada'
+export type MatchResultStatus = 'Win' | 'Loss' | 'Cancelled'
 
 export interface MatchHistoryItem {
   id: string

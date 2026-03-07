@@ -8,7 +8,7 @@ import type { CreatePartidaDTO } from '@/models/DTO/CreatePartidaDTO'
 const router = useRouter()
 const { createPartida } = usePartida()
 
-const idPartida = ref(`partida-${Date.now()}`)
+  const idPartida = ref(`match-${Date.now()}`)
 const ownerUserId = ref<number | null>(null)
 const rivalUserId = ref<number | null>(null)
 const nodosRaw = ref('')
@@ -67,7 +67,7 @@ async function handleCreatePartida(): Promise<void> {
   successMsg.value = ''
 
   if (!canSubmit.value) {
-    errorMsg.value = 'Completa los campos obligatorios para crear la partida.'
+    errorMsg.value = 'Please fill in all required fields to create the match.'
     return
   }
 
@@ -87,9 +87,9 @@ async function handleCreatePartida(): Promise<void> {
     }
 
     const created = await createPartida(payload)
-    successMsg.value = `Partida creada correctamente: ${created.idPartida}`
+    successMsg.value = `Match created successfully: ${created.idPartida}`
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'No se pudo crear la partida'
+    errorMsg.value = error instanceof Error ? error.message : 'Could not create the match'
   } finally {
     loading.value = false
   }
@@ -100,35 +100,35 @@ async function handleCreatePartida(): Promise<void> {
   <Header />
   <section class="create-page">
     <div class="create-shell">
-      <h1>Crear Partida</h1>
-      <p class="subtitle">Esta pantalla crea la partida en backend y deja lista la sesion para Unity.</p>
+      <h1>Create Match</h1>
+      <p class="subtitle">This screen creates the match in the backend and prepares the session for Unity.</p>
 
       <form class="create-form" @submit.prevent="handleCreatePartida">
         <label>
-          ID de partida
+          Match ID
           <input v-model="idPartida" type="text" required />
         </label>
 
         <label>
-          Tu usuario (desde token)
+          Your user (from token)
           <input :value="ownerUserId ?? ''" type="number" readonly />
         </label>
 
         <label>
-          Usuario rival (opcional)
+          Rival user (optional)
           <input v-model.number="rivalUserId" type="number" />
         </label>
 
         <label>
-          IDs de nodos (opcional, separados por coma)
+          Node IDs (optional, comma-separated)
           <input v-model="nodosRaw" type="text" placeholder="1,2,3" />
         </label>
 
         <div class="actions">
           <button type="submit" :disabled="loading || !canSubmit">
-            {{ loading ? 'Creando...' : 'Crear partida' }}
+            {{ loading ? 'Creating...' : 'Create Match' }}
           </button>
-          <button type="button" class="secondary" @click="router.push('/unity')">Ir a Unity</button>
+          <button type="button" class="secondary" @click="router.push('/game')">Go to Game</button>
         </div>
 
         <p v-if="errorMsg" class="error">{{ errorMsg }}</p>

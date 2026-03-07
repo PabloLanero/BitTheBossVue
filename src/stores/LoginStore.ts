@@ -20,8 +20,8 @@ export const useLogin = defineStore('login', () => {
     })
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Error al iniciar sesión' }))
-      throw new Error(error.message ?? 'Error al iniciar sesión')
+      const error = await res.json().catch(() => ({ message: 'Login error' }))
+      throw new Error(error.message ?? 'Login error')
     }
 
     const data = (await res.json()) as unknown
@@ -33,7 +33,7 @@ export const useLogin = defineStore('login', () => {
           : ''
 
     if (!jwt.value) {
-      throw new Error('El backend no devolvió un token válido')
+      throw new Error('The backend did not return a valid token')
     }
 
     localStorage.setItem('token', jwt.value)

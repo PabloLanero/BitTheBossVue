@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { RouterLink } from 'vue-router';
 import Logo from '@/components/Logo/Logo.vue';
 
 const { t } = useI18n();
@@ -13,9 +14,9 @@ const { t } = useI18n();
       </div>
 
       <nav class="site-footer__links">
-        <a href="#" class="footer-link">{{ t('footer.privacy') }}</a>
-        <a href="#" class="footer-link">{{ t('footer.privacy') }}</a>
-        <a href="#" class="footer-link">{{ t('footer.terms') }}</a>
+        <RouterLink to="/privacy" class="footer-link">{{ t('footer.privacy') }}</RouterLink>
+        <RouterLink to="/legal" class="footer-link">{{ t('footer.terms') }}</RouterLink>
+        <RouterLink to="/community" class="footer-link">{{ t('footer.faq') }}</RouterLink>
       </nav>
 
       <div class="site-footer__right">

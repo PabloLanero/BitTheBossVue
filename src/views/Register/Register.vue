@@ -19,7 +19,7 @@ const errorMsg    = ref('')
 
 async function handleSubmit() {
   if (!acceptTerms.value) {
-    errorMsg.value = 'Debes aceptar los términos y condiciones.'
+    errorMsg.value = 'You must accept the terms and conditions.'
     return
   }
   errorMsg.value = ''
@@ -29,9 +29,9 @@ async function handleSubmit() {
     await registerStore.register(data)
     localStorage.setItem('auth_name', data.userName)
     localStorage.setItem('auth_email', data.email)
-    router.push('/game')
+    router.push('/history')
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'Error al crear la cuenta. Inténtalo de nuevo.'
+    errorMsg.value = error instanceof Error ? error.message : 'Error creating account. Please try again.'
   } finally {
     loading.value = false
   }

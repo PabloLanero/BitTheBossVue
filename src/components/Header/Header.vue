@@ -8,8 +8,8 @@ const router   = useRouter()
 const loginStore = useLogin()
 
 const isLoggedIn = computed(() => loginStore.isAuthenticated || !!localStorage.getItem('token'))
-const userName   = computed(() => localStorage.getItem('auth_name') ?? 'Mi Perfil')
-const gameRoute = computed(() => (isLoggedIn.value ? '/game' : '/Login'))
+const userName   = computed(() => localStorage.getItem('auth_name') ?? 'My Profile')
+const gameRoute = computed(() => (isLoggedIn.value ? '/history' : '/Login'))
 
 function logout() {
   loginStore.logout()
@@ -28,8 +28,9 @@ function logout() {
 
       <nav class="site-header__nav">
         <RouterLink :to="gameRoute" class="nav-link">{{ $t('header.game') }}</RouterLink>
-        <RouterLink to="/unity" class="nav-link">{{ $t('header.factions') }}</RouterLink>
-        <RouterLink to="/Home" class="nav-link">{{ $t('header.community') }}</RouterLink>
+        <RouterLink to="/game" class="nav-link">{{ $t('header.factions') }}</RouterLink>
+        <RouterLink to="/factions" class="nav-link">{{ $t('header.community') }}</RouterLink>
+        <RouterLink to="/community" class="nav-link">{{ $t('header.communityLink') }}</RouterLink>
       </nav>
 
       <div class="site-header__actions">

@@ -5,26 +5,26 @@ import Header from '@/components/Header/Header.vue'
 import type { MatchHistoryItem, MatchResultStatus } from '@/models/GameHistory'
 import { getHistoryEntries } from '@/utils/gameHistory'
 
-type StatusFilter = 'Todos' | MatchResultStatus
+type StatusFilter = 'All' | MatchResultStatus
 
 const router = useRouter()
 const loading = ref(true)
 const searchText = ref('')
-const selectedStatus = ref<StatusFilter>('Todos')
+const selectedStatus = ref<StatusFilter>('All')
 const rows = ref<MatchHistoryItem[]>([])
 
-const statusFilters: StatusFilter[] = ['Todos', 'Victoria', 'Derrota', 'Cancelada']
+const statusFilters: StatusFilter[] = ['All', 'Win', 'Loss', 'Cancelled']
 
 const statusCounts = computed(() => ({
-  Victoria: rows.value.filter((item) => item.status === 'Victoria').length,
-  Derrota: rows.value.filter((item) => item.status === 'Derrota').length,
-  Cancelada: rows.value.filter((item) => item.status === 'Cancelada').length,
+  Win: rows.value.filter((item) => item.status === 'Win').length,
+  Loss: rows.value.filter((item) => item.status === 'Loss').length,
+  Cancelled: rows.value.filter((item) => item.status === 'Cancelled').length,
 }))
 
 const filteredRows = computed(() => {
   const query = searchText.value.trim().toLowerCase()
   return rows.value.filter((row) => {
-    if (selectedStatus.value !== 'Todos' && row.status !== selectedStatus.value) return false
+    if (selectedStatus.value !== 'All' && row.status !== selectedStatus.value) return false
     if (!query) return true
 
     return (
@@ -37,8 +37,8 @@ const filteredRows = computed(() => {
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Sin fecha'
-  return new Intl.DateTimeFormat('es-ES', {
+  if (Number.isNaN(date.getTime())) return 'No date'
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)
@@ -59,18 +59,18 @@ onMounted(() => {
   <section class="game-page">
     <div class="game-shell">
       <div class="game-head">
-        <h1>Historial de partidas</h1>
-        <button class="new-btn" @click="router.push('/game/new')">Jugar nueva partida</button>
+        <h1>Match History</h1>
+        <button class="new-btn" @click="router.push('/history/new')">Play New Match</button>
       </div>
 
       <div class="status-resume">
-        <p>Victoria: {{ statusCounts.Victoria }}</p>
-        <p>Derrota: {{ statusCounts.Derrota }}</p>
-        <p>Cancelada: {{ statusCounts.Cancelada }}</p>
+        <p>Win: {{ statusCounts.Win }}</p>
+        <p>Loss: {{ statusCounts.Loss }}</p>
+        <p>Cancelled: {{ statusCounts.Cancelled }}</p>
       </div>
 
       <div class="search-wrap">
-        <input v-model="searchText" type="text" placeholder="Buscar por nombre, ID o contrincante" />
+        <input v-model="searchText" type="text" placeholder="Search by name, ID or opponent" />
       </div>
 
       <div class="filters">
@@ -84,8 +84,8 @@ onMounted(() => {
         </button>
       </div>
 
-      <div v-if="loading" class="empty">Cargando historial...</div>
-      <div v-else-if="filteredRows.length === 0" class="empty">No hay partidas en el historial.</div>
+      <div v-if="loading" class="empty">Loading history...</div>
+      <div v-else-if="filteredRows.length === 0" class="empty">No matches in history.</div>
 
       <div v-else class="list">
         <article v-for="row in filteredRows" :key="row.id" class="row">
@@ -93,7 +93,7 @@ onMounted(() => {
             <h2>{{ row.partidaNombre }}</h2>
             <p>ID: {{ row.partidaId }}</p>
             <p>{{ row.opponentLabel }}</p>
-            <p>Finalizada: {{ formatDate(row.finishedAt) }}</p>
+            <p>Finished: {{ formatDate(row.finishedAt) }}</p>
           </div>
           <span class="status-pill" :class="statusClass(row.status)">{{ row.status }}</span>
         </article>
@@ -219,19 +219,19 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.status-victoria {
+.status-win {
   color: #97feed;
   border: 1px solid rgba(151, 254, 237, 0.5);
   background: rgba(151, 254, 237, 0.12);
 }
 
-.status-derrota {
+.status-loss {
   color: #ffb4b4;
   border: 1px solid rgba(255, 180, 180, 0.5);
   background: rgba(255, 180, 180, 0.12);
 }
 
-.status-cancelada {
+.status-cancelled {
   color: #ffe4b5;
   border: 1px solid rgba(255, 228, 181, 0.45);
   background: rgba(255, 228, 181, 0.1);
