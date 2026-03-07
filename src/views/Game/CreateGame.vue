@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header/Header.vue'
 import { usePartida } from '@/ApiCalls/usePartida'
@@ -8,8 +9,9 @@ import { getUserIdFromToken } from '@/utils/auth'
 import { useConstants } from '@/stores/Constants'
 
 const router = useRouter()
+const { t } = useI18n()
 const { createPartida } = usePartida()
-const { ApiUrl } = useConstants()
+const { ApiUrl, SignalRHubPath } = useConstants()
 
 const gameName = ref('')
 const opponentMode = ref<'ia' | 'player'>('ia')
@@ -43,7 +45,7 @@ function buildIdPartida(name: string): string {
 async function handleCreate(): Promise<void> {
   errorMsg.value = ''
   if (!canCreate.value) {
-    errorMsg.value = 'Please fill in all required fields.'
+    errorMsg.value = t('createGame.errors.required')
     return
   }
 
@@ -60,8 +62,11 @@ async function handleCreate(): Promise<void> {
 
     await createPartida(payload)
 
+    const difficultyLabel = t(`createGame.difficulty.${difficulty.value.toLowerCase()}`)
     const opponentLabel =
-      opponentMode.value === 'ia' ? `VS AI - ${difficulty.value}` : `VS Player #${secondUser}`
+      opponentMode.value === 'ia'
+        ? t('createGame.opponentLabel.ai', { difficulty: difficultyLabel })
+        : t('createGame.opponentLabel.player', { id: secondUser })
 
     const token = localStorage.getItem('token') ?? ''
     router.push({
@@ -72,12 +77,14 @@ async function handleCreate(): Promise<void> {
         opponentLabel,
         token,
         apiBaseUrl: ApiUrl,
+        multiplayer: opponentMode.value === 'player' ? '1' : '0',
+        signalRHubUrl: `${ApiUrl}${SignalRHubPath}`,
         moneyPlayer1: String(INITIAL_MONEY_PLAYER1),
         moneyPlayer2: String(INITIAL_MONEY_PLAYER2),
       },
     })
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'Could not create the match'
+    errorMsg.value = error instanceof Error ? error.message : t('createGame.errors.create')
   } finally {
     loading.value = false
   }
@@ -88,42 +95,46 @@ async function handleCreate(): Promise<void> {
   <Header />
   <section class="create-page">
     <div class="create-shell">
-      <h1>New Match</h1>
-      <p>Configure the parameters and launch a new match.</p>
+      <h1>{{ t('createGame.title') }}</h1>
+      <p>{{ t('createGame.subtitle') }}</p>
 
       <form class="form" @submit.prevent="handleCreate">
         <label>
-          Match Name
-          <input v-model="gameName" type="text" placeholder="My match against AI" required />
+          {{ t('createGame.matchName') }}
+          <input v-model="gameName" type="text" :placeholder="t('createGame.matchNamePlaceholder')" required />
         </label>
 
         <label>
-          Opponent Mode
+          {{ t('createGame.opponentMode') }}
           <select v-model="opponentMode">
-            <option value="ia">VS AI</option>
-            <option value="player">VS Player</option>
+            <option value="ia">{{ t('createGame.opponent.ai') }}</option>
+            <option value="player">{{ t('createGame.opponent.player') }}</option>
           </select>
         </label>
 
         <label v-if="opponentMode === 'ia'">
-          AI Difficulty
+          {{ t('createGame.aiDifficulty') }}
           <select v-model="difficulty">
-            <option value="Easy">Easy</option>
-            <option value="Normal">Normal</option>
-            <option value="Hard">Hard</option>
+            <option value="Easy">{{ t('createGame.difficulty.easy') }}</option>
+            <option value="Normal">{{ t('createGame.difficulty.normal') }}</option>
+            <option value="Hard">{{ t('createGame.difficulty.hard') }}</option>
           </select>
         </label>
 
         <label v-else>
-          Rival User ID
+          {{ t('createGame.rivalUserId') }}
           <input v-model.number="rivalUserId" type="number" min="1" required />
         </label>
 
         <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
         <div class="actions">
-          <button type="button" class="secondary" @click="router.push('/history')">Back</button>
-          <button type="submit" :disabled="loading || !canCreate">{{ loading ? 'Opening...' : 'Play New Match' }}</button>
+          <button type="button" class="secondary" @click="router.push('/history')">
+            {{ t('createGame.actions.back') }}
+          </button>
+          <button type="submit" :disabled="loading || !canCreate">
+            {{ loading ? t('createGame.actions.opening') : t('createGame.actions.play') }}
+          </button>
         </div>
       </form>
     </div>

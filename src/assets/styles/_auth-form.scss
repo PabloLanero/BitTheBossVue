@@ -1,3 +1,5 @@
+@use "./variables/constantes.scss" as *;
+
 // Estilos compartidos para Login y Register
 // Se importa en cada vista de autenticación
 
@@ -228,3 +230,4 @@
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+

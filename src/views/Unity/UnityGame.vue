@@ -5,38 +5,38 @@
       <header class="unity-header">
         <div>
           <h1>BitTheBoss</h1>
-          <p>Unity WebGL</p>
+          <p>{{ t('unity.subtitle') }}</p>
         </div>
-        <button class="finish-btn" type="button" @click="openExitModal">End Match</button>
+        <button class="finish-btn" type="button" @click="openExitModal">{{ t('unity.actions.endMatch') }}</button>
       </header>
 
       <div class="unity-wrapper">
         <canvas ref="canvasRef" id="unity-canvas"></canvas>
         <div v-if="loading" class="loading-overlay">
-          <p>Loading Unity...</p>
+          <p>{{ t('unity.loading') }}</p>
         </div>
         <div v-if="error" class="error-overlay">
-          <p>Error loading Unity: {{ error }}</p>
+          <p>{{ t('unity.errorLoading', { error }) }}</p>
         </div>
       </div>
 
       <div v-if="showExitModal" class="modal-backdrop">
         <div class="modal-card">
-          <h3>End Match</h3>
-          <p>Select the status to register for this match in the history.</p>
+          <h3>{{ t('unity.modal.title') }}</h3>
+          <p>{{ t('unity.modal.subtitle') }}</p>
           <p v-if="exitError" class="modal-error">{{ exitError }}</p>
           <div class="modal-actions">
             <button type="button" class="modal-btn secondary" :disabled="exiting" @click="cancelExitModal">
-              Cancel
+              {{ t('unity.actions.cancel') }}
             </button>
             <button type="button" class="modal-btn victory" :disabled="exiting" @click="finishMatch('Win')">
-              Win
+              {{ t('unity.actions.win') }}
             </button>
             <button type="button" class="modal-btn defeat" :disabled="exiting" @click="finishMatch('Loss')">
-              Loss
+              {{ t('unity.actions.loss') }}
             </button>
             <button type="button" class="modal-btn cancel" :disabled="exiting" @click="finishMatch('Cancelled')">
-              Cancelled
+              {{ t('unity.actions.cancelled') }}
             </button>
           </div>
         </div>
@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import Header from '@/components/Header/Header.vue'
 import { addHistoryEntry } from '@/utils/gameHistory'
@@ -60,6 +61,7 @@ import {
   sendTokenToUnity,
   unregisterUnityInstance,
 } from '@/services/unityBridge'
+import { registerUnitySignalRBridge, unregisterUnitySignalRBridge } from '@/services/unitySignalRBridge'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const loading = ref(true)
@@ -75,6 +77,7 @@ const UNITY_LOADER_SRC = `${UNITY_BUILD_BASE}.loader.js`
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 interface UnityConfig {
   dataUrl: string
@@ -175,7 +178,7 @@ async function finishMatch(status: MatchResultStatus): Promise<void> {
     addHistoryEntry({
       partidaId,
       partidaNombre: partidaNombreQuery || partidaId,
-      opponentLabel: opponentLabelQuery || 'VS AI - Normal',
+      opponentLabel: opponentLabelQuery || t('unity.defaults.opponentLabel'),
       status,
     })
 
@@ -186,7 +189,7 @@ async function finishMatch(status: MatchResultStatus): Promise<void> {
   } catch (finishError) {
     exiting.value = false
     exitError.value =
-      finishError instanceof Error ? finishError.message : 'Could not end the match'
+      finishError instanceof Error ? finishError.message : t('unity.errors.endMatch')
     requestUnityPause(false)
   }
 }
@@ -195,7 +198,7 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
   if (hasUnityBooted) return
 
   if (typeof window.createUnityInstance === 'undefined') {
-    error.value = 'createUnityInstance is not available after loading the loader'
+    error.value = t('unity.errors.createUnityUnavailable')
     loading.value = false
     return
   }
@@ -231,6 +234,7 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
 }
 
 onMounted(async () => {
+  registerUnitySignalRBridge()
   window.addEventListener(TOKEN_CHANGED_EVENT, onTokenChanged as EventListener)
 
   try {
@@ -238,7 +242,7 @@ onMounted(async () => {
 
     const canvas = canvasRef.value
     if (!canvas) {
-      error.value = 'Could not get reference to canvas'
+      error.value = t('unity.errors.canvasReference')
       return
     }
 
@@ -252,7 +256,7 @@ onMounted(async () => {
     }
 
     const handleLoaderError = () => {
-      error.value = 'Error loading the Unity loader script'
+      error.value = t('unity.errors.loaderScript')
       loading.value = false
       console.error('[UnityGame] Error loading loader script:', UNITY_LOADER_SRC)
     }
@@ -273,7 +277,7 @@ onMounted(async () => {
       loaderScript.addEventListener('error', handleLoaderError, { once: true })
     }
   } catch (err: unknown) {
-    error.value = `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+    error.value = t('unity.errors.unexpected', { error: err instanceof Error ? err.message : String(err) })
     loading.value = false
     console.error('[UnityGame] Error in onMounted:', err)
   }
@@ -285,6 +289,7 @@ onBeforeRouteLeave(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener(TOKEN_CHANGED_EVENT, onTokenChanged as EventListener)
+  unregisterUnitySignalRBridge()
   if (!isTearingDown) {
     void teardownUnity('component-unmount')
   }

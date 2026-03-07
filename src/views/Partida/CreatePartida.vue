@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header/Header.vue'
 import { usePartida } from '@/ApiCalls/usePartida'
 import type { CreatePartidaDTO } from '@/models/DTO/CreatePartidaDTO'
 
 const router = useRouter()
+const { t } = useI18n()
 const { createPartida } = usePartida()
 
   const idPartida = ref(`match-${Date.now()}`)
@@ -67,7 +69,7 @@ async function handleCreatePartida(): Promise<void> {
   successMsg.value = ''
 
   if (!canSubmit.value) {
-    errorMsg.value = 'Please fill in all required fields to create the match.'
+    errorMsg.value = t('createPartida.errors.required')
     return
   }
 
@@ -87,9 +89,9 @@ async function handleCreatePartida(): Promise<void> {
     }
 
     const created = await createPartida(payload)
-    successMsg.value = `Match created successfully: ${created.idPartida}`
+    successMsg.value = t('createPartida.success', { id: created.idPartida })
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'Could not create the match'
+    errorMsg.value = error instanceof Error ? error.message : t('createPartida.errors.create')
   } finally {
     loading.value = false
   }
@@ -100,35 +102,35 @@ async function handleCreatePartida(): Promise<void> {
   <Header />
   <section class="create-page">
     <div class="create-shell">
-      <h1>Create Match</h1>
-      <p class="subtitle">This screen creates the match in the backend and prepares the session for Unity.</p>
+      <h1>{{ t('createPartida.title') }}</h1>
+      <p class="subtitle">{{ t('createPartida.subtitle') }}</p>
 
       <form class="create-form" @submit.prevent="handleCreatePartida">
         <label>
-          Match ID
+          {{ t('createPartida.labels.matchId') }}
           <input v-model="idPartida" type="text" required />
         </label>
 
         <label>
-          Your user (from token)
+          {{ t('createPartida.labels.owner') }}
           <input :value="ownerUserId ?? ''" type="number" readonly />
         </label>
 
         <label>
-          Rival user (optional)
+          {{ t('createPartida.labels.rival') }}
           <input v-model.number="rivalUserId" type="number" />
         </label>
 
         <label>
-          Node IDs (optional, comma-separated)
-          <input v-model="nodosRaw" type="text" placeholder="1,2,3" />
+          {{ t('createPartida.labels.nodes') }}
+          <input v-model="nodosRaw" type="text" :placeholder="t('createPartida.nodePlaceholder')" />
         </label>
 
         <div class="actions">
           <button type="submit" :disabled="loading || !canSubmit">
-            {{ loading ? 'Creating...' : 'Create Match' }}
+            {{ loading ? t('createPartida.actions.creating') : t('createPartida.actions.create') }}
           </button>
-          <button type="button" class="secondary" @click="router.push('/game')">Go to Game</button>
+          <button type="button" class="secondary" @click="router.push('/game')">{{ t('createPartida.actions.goToGame') }}</button>
         </div>
 
         <p v-if="errorMsg" class="error">{{ errorMsg }}</p>

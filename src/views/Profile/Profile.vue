@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Logo from '@/components/Logo/Logo.vue'
 import EditProfileModal from '@/components/Profile/EditProfileModal.vue'
@@ -8,6 +9,7 @@ import { useUser } from '@/ApiCalls/useUser'
 import { useLogin } from '@/stores/LoginStore'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const { getUsuarios, getUsuarioById } = useUser()
 
 const showEditModal   = ref(false)
@@ -91,9 +93,9 @@ const profile = computed(() => {
 })
 
 function noData(value: unknown): string {
-  if (value === null || value === undefined) return 'No data'
+  if (value === null || value === undefined) return t('profile.noData')
   const text = String(value).trim()
-  return text.length > 0 ? text : 'No data'
+  return text.length > 0 ? text : t('profile.noData')
 }
 
 function roleClass(roleValue: unknown): string {
@@ -102,6 +104,14 @@ function roleClass(roleValue: unknown): string {
     return `role-badge--${role}`
   }
   return 'role-badge--empty'
+}
+
+function roleLabel(roleValue: unknown): string {
+  const role = String(roleValue ?? '').toLowerCase()
+  if (role === 'premium' || role === 'admin' || role === 'user') {
+    return t(`profile.roles.${role}`)
+  }
+  return noData(roleValue)
 }
 
 async function loadProfile(): Promise<void> {
@@ -142,10 +152,14 @@ async function loadProfile(): Promise<void> {
 }
 
 function formatDate(dateValue: string | Date | null): string {
-  if (!dateValue) return 'No data'
+  if (!dateValue) return t('profile.noData')
   const date = new Date(dateValue)
-  if (Number.isNaN(date.getTime())) return 'No data'
-  return new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
+  if (Number.isNaN(date.getTime())) return t('profile.noData')
+  return new Intl.DateTimeFormat(locale.value === 'es' ? 'es-ES' : 'en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
 }
 
 function playersCount(partida: any): number {
@@ -159,12 +173,12 @@ onMounted(async () => {
   try {
     await loadProfile()
     if (!userRaw.value) {
-      errorMsg.value = 'No user data found for this session.'
+      errorMsg.value = t('profile.errors.noUserData')
     }
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Could not load profile'
+    const msg = error instanceof Error ? error.message : t('profile.errors.loadError')
     if (msg.toLowerCase().includes('failed to fetch')) {
-      errorMsg.value = 'Could not connect to the backend to load the full profile. Showing available data.'
+      errorMsg.value = t('profile.errors.backendError')
     } else {
       errorMsg.value = msg
     }
@@ -186,19 +200,19 @@ onMounted(async () => {
       <div class="profile-topbar__right">
         <button class="back-btn" @click="router.push('/Home')">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-          Back to Home
+          {{ t('profile.backHome') }}
         </button>
         <button class="logout-btn" @click="showLogoutModal = true">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-          Log Out
+          {{ t('profile.logout') }}
         </button>
       </div>
     </div>
 
     <div class="profile-content">
       <div class="profile-hero">
-        <h1 class="profile-hero__title">User Profile</h1>
-        <p class="profile-hero__subtitle">Manage your information and statistics</p>
+        <h1 class="profile-hero__title">{{ t('profile.title') }}</h1>
+        <p class="profile-hero__subtitle">{{ t('profile.subtitle') }}</p>
       </div>
 
       <div v-if="errorMsg" class="profile-card profile-state profile-state--error">
@@ -210,10 +224,10 @@ onMounted(async () => {
           <span class="icon-badge">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
           </span>
-          <span class="profile-card__header-title">Personal Information</span>
+          <span class="profile-card__header-title">{{ t('profile.sections.personalInfo') }}</span>
           <button class="edit-btn" @click="showEditModal = true">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            Edit
+            {{ t('profile.buttons.edit') }}
           </button>
         </div>
 
@@ -223,8 +237,8 @@ onMounted(async () => {
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
             </span>
             <div class="info-row__content">
-              <span class="info-row__label">Username</span>
-              <span class="info-row__value">{{ loading ? 'Loading...' : noData(profile.name) }}</span>
+              <span class="info-row__label">{{ t('profile.labels.username') }}</span>
+              <span class="info-row__value">{{ loading ? t('common.loading') : noData(profile.name) }}</span>
             </div>
           </div>
 
@@ -233,8 +247,8 @@ onMounted(async () => {
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
             </span>
             <div class="info-row__content">
-              <span class="info-row__label">Email</span>
-              <span class="info-row__value">{{ loading ? 'Loading...' : noData(profile.email) }}</span>
+              <span class="info-row__label">{{ t('profile.labels.email') }}</span>
+              <span class="info-row__value">{{ loading ? t('common.loading') : noData(profile.email) }}</span>
             </div>
           </div>
 
@@ -243,8 +257,8 @@ onMounted(async () => {
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/></svg>
             </span>
             <div class="info-row__content">
-              <span class="info-row__label">User ID</span>
-              <span class="info-row__value">{{ loading ? 'Loading...' : (profile.id ? `#${profile.id}` : 'No data') }}</span>
+              <span class="info-row__label">{{ t('profile.labels.userId') }}</span>
+              <span class="info-row__value">{{ loading ? t('common.loading') : (profile.id ? `#${profile.id}` : t('profile.noData')) }}</span>
             </div>
           </div>
 
@@ -253,9 +267,9 @@ onMounted(async () => {
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>
             </span>
             <div class="info-row__content">
-              <span class="info-row__label">Role</span>
+              <span class="info-row__label">{{ t('profile.labels.role') }}</span>
               <span class="role-badge" :class="roleClass(profile.role)">
-                {{ loading ? 'Loading...' : noData(profile.role ? String(profile.role).toUpperCase() : null) }}
+                {{ loading ? t('common.loading') : roleLabel(profile.role) }}
               </span>
             </div>
           </div>
@@ -265,8 +279,8 @@ onMounted(async () => {
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
             </span>
             <div class="info-row__content">
-              <span class="info-row__label">Member Since</span>
-              <span class="info-row__value">{{ loading ? 'Loading...' : formatDate(profile.createdAt) }}</span>
+              <span class="info-row__label">{{ t('profile.labels.memberSince') }}</span>
+              <span class="info-row__value">{{ loading ? t('common.loading') : formatDate(profile.createdAt) }}</span>
             </div>
           </div>
         </div>
@@ -278,16 +292,16 @@ onMounted(async () => {
           <span class="icon-badge">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
           </span>
-          <span class="profile-card__header-title">Competitive Rank</span>
+          <span class="profile-card__header-title">{{ t('profile.sections.rank') }}</span>
         </div>
 
         <div class="rank-body">
           <div>
-            <p class="rank-body__label">Current Tier</p>
-            <p class="rank-body__value">{{ loading ? 'Loading...' : noData(profile.tierTitle) }}</p>
+            <p class="rank-body__label">{{ t('profile.labels.currentTier') }}</p>
+            <p class="rank-body__value">{{ loading ? t('common.loading') : noData(profile.tierTitle) }}</p>
           </div>
           <div class="rank-body__level">
-            <p class="rank-body__label">Level</p>
+            <p class="rank-body__label">{{ t('profile.labels.level') }}</p>
             <p class="rank-body__level-num">{{ loading ? '-' : noData(profile.tierLevel) }}</p>
           </div>
         </div>
@@ -299,7 +313,7 @@ onMounted(async () => {
           <span class="icon-badge">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5S14.67 12 15.5 12s1.5.67 1.5 1.5S16.33 15 15.5 15zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5S19.33 12 18.5 12z"/></svg>
           </span>
-          <span class="profile-card__header-title">Match History</span>
+          <span class="profile-card__header-title">{{ t('profile.sections.history') }}</span>
           <span class="count-badge">{{ loading ? '-' : profile.partidas.length }}</span>
         </div>
 
@@ -307,10 +321,10 @@ onMounted(async () => {
           <div v-if="loading" class="game-row">
             <span class="game-row__num">-</span>
             <div class="game-row__info">
-              <span class="game-row__id">Loading...</span>
-              <span class="game-row__players">Loading...</span>
+              <span class="game-row__id">{{ t('common.loading') }}</span>
+              <span class="game-row__players">{{ t('common.loading') }}</span>
             </div>
-            <button class="detail-btn" disabled>View Details</button>
+            <button class="detail-btn" disabled>{{ t('profile.buttons.viewDetails') }}</button>
           </div>
           <div
             v-else
@@ -321,17 +335,17 @@ onMounted(async () => {
             <span class="game-row__num">{{ i + 1 }}</span>
             <div class="game-row__info">
               <span class="game-row__id">{{ partida.idPartida }}</span>
-              <span class="game-row__players">{{ playersCount(partida) }} player(s)</span>
+              <span class="game-row__players">{{ t('profile.playersCount', { count: playersCount(partida) }) }}</span>
             </div>
-            <button class="detail-btn">View Details</button>
+            <button class="detail-btn">{{ t('profile.buttons.viewDetails') }}</button>
           </div>
           <div v-if="!loading && profile.partidas.length === 0" class="game-row">
             <span class="game-row__num">-</span>
             <div class="game-row__info">
-              <span class="game-row__id">No data</span>
-              <span class="game-row__players">No matches registered</span>
+              <span class="game-row__id">{{ t('profile.noData') }}</span>
+              <span class="game-row__players">{{ t('profile.matches.noRegistered') }}</span>
             </div>
-            <button class="detail-btn" disabled>View Details</button>
+            <button class="detail-btn" disabled>{{ t('profile.buttons.viewDetails') }}</button>
           </div>
         </div>
       </div>

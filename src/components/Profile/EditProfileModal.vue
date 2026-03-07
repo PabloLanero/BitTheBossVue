@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConstants } from '@/stores/Constants'
 
 const props = defineProps<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
   saved: [name: string, email: string]
 }>()
 const { ApiUrl } = useConstants()
+const { t } = useI18n()
 
 const name     = ref('')
 const email    = ref('')
@@ -32,7 +34,7 @@ watch(() => props.visible, (val) => {
 
 async function handleSave() {
   if (!name.value.trim() || !email.value.trim()) {
-    errorMsg.value = 'Name and email are required.'
+    errorMsg.value = t('editProfile.errors.required')
     return
   }
 
@@ -41,7 +43,7 @@ async function handleSave() {
 
   try {
     const token = localStorage.getItem('token')
-    if (!token) throw new Error('No active session.')
+    if (!token) throw new Error(t('editProfile.errors.noSession'))
 
     if (props.userId != null) {
       const res = await fetch(`${ApiUrl}/Usuario/${props.userId}`, {
@@ -57,19 +59,19 @@ async function handleSave() {
       })
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'Error saving changes' }))
-        throw new Error(err.message ?? 'Error saving changes')
+        const err = await res.json().catch(() => ({ message: t('editProfile.errors.save') }))
+        throw new Error(err.message ?? t('editProfile.errors.save'))
       }
     }
 
     localStorage.setItem('auth_name', name.value.trim())
     localStorage.setItem('auth_email', email.value.trim())
-    successMsg.value = 'Changes saved!'
+    successMsg.value = t('editProfile.success.saved')
     emit('saved', name.value.trim(), email.value.trim())
 
     setTimeout(() => emit('close'), 800)
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'Unknown error'
+    errorMsg.value = error instanceof Error ? error.message : t('editProfile.errors.unknown')
   } finally {
     saving.value = false
   }
@@ -95,9 +97,9 @@ function onOverlayClick(e: MouseEvent) {
               </svg>
             </span>
             <div class="modal__header-text">
-              <h2 class="modal__title">Edit Profile</h2>
+              <h2 class="modal__title">{{ t('editProfile.title') }}</h2>
             </div>
-            <button class="modal__close" @click="emit('close')" aria-label="Close">
+            <button class="modal__close" @click="emit('close')" :aria-label="t('common.close')">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
               </svg>
@@ -105,7 +107,7 @@ function onOverlayClick(e: MouseEvent) {
           </div>
 
           <p class="modal__subtitle">
-            Update your personal information. Changes will be saved to your account.
+            {{ t('editProfile.subtitle') }}
           </p>
 
           <form class="modal__form" @submit.prevent="handleSave" novalidate>
@@ -115,13 +117,13 @@ function onOverlayClick(e: MouseEvent) {
                 <svg class="modal-field__icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
                 </svg>
-                Username
+                {{ t('editProfile.username') }}
               </label>
               <input
                 v-model="name"
                 type="text"
                 class="modal-field__input"
-                placeholder="Your username"
+                :placeholder="t('editProfile.usernamePlaceholder')"
                 autocomplete="username"
                 required
               />
@@ -132,21 +134,21 @@ function onOverlayClick(e: MouseEvent) {
                 <svg class="modal-field__icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
                 </svg>
-                Email
+                {{ t('editProfile.email') }}
               </label>
               <input
                 v-model="email"
                 type="email"
                 class="modal-field__input"
-                placeholder="tu@email.com"
+                :placeholder="t('editProfile.emailPlaceholder')"
                 autocomplete="email"
                 required
               />
             </div>
 
             <div class="modal__note">
-              <strong>Nota:</strong>
-              Your user ID{{ userId ? ` (#${userId})` : '' }} and registration date cannot be modified.
+              <strong>{{ t('editProfile.noteLabel') }}</strong>
+              {{ t('editProfile.noteText', { userId: userId ? ` (#${userId})` : '' }) }}
             </div>
 
             <p v-if="errorMsg"   class="modal__feedback modal__feedback--error">{{ errorMsg }}</p>
@@ -155,13 +157,13 @@ function onOverlayClick(e: MouseEvent) {
             <div class="modal__actions">
               <button type="button" class="modal__btn modal__btn--cancel" @click="emit('close')">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                Cancel
+                {{ t('editProfile.actions.cancel') }}
               </button>
               <button type="submit" class="modal__btn modal__btn--save" :disabled="saving">
                 <span v-if="saving" class="btn-spinner" />
                 <template v-else>
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-                  Save Changes
+                  {{ t('editProfile.actions.save') }}
                 </template>
               </button>
             </div>

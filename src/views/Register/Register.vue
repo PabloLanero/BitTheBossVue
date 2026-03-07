@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useRegister } from '@/stores/Credentials'
 import type { Register } from '@/models/DTO/RegisterDTO'
+import { SUPPORTED_LOCALES, type AppLocale, setAppLocale } from '@/i18n/i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const registerStore = useRegister()
 
@@ -17,9 +18,22 @@ const acceptTerms = ref(false)
 const loading     = ref(false)
 const errorMsg    = ref('')
 
+const selectedLocale = computed<AppLocale>({
+  get: () => {
+    if (SUPPORTED_LOCALES.includes(locale.value as AppLocale)) {
+      return locale.value as AppLocale
+    }
+    return 'en'
+  },
+  set: (nextLocale) => {
+    if (!SUPPORTED_LOCALES.includes(nextLocale)) return
+    setAppLocale(nextLocale)
+  },
+})
+
 async function handleSubmit() {
   if (!acceptTerms.value) {
-    errorMsg.value = 'You must accept the terms and conditions.'
+    errorMsg.value = t('registerPage.errors.termsRequired')
     return
   }
   errorMsg.value = ''
@@ -31,7 +45,7 @@ async function handleSubmit() {
     localStorage.setItem('auth_email', data.email)
     router.push('/history')
   } catch (error) {
-    errorMsg.value = error instanceof Error ? error.message : 'Error creating account. Please try again.'
+    errorMsg.value = error instanceof Error ? error.message : t('registerPage.errors.createError')
   } finally {
     loading.value = false
   }
@@ -41,6 +55,24 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <div class="auth-card">
+      <div class="auth-lang">
+        <button
+          type="button"
+          class="auth-lang__btn"
+          :class="{ 'auth-lang__btn--active': selectedLocale === 'en' }"
+          @click="selectedLocale = 'en'"
+        >
+          {{ t('header.langEn') }}
+        </button>
+        <button
+          type="button"
+          class="auth-lang__btn"
+          :class="{ 'auth-lang__btn--active': selectedLocale === 'es' }"
+          @click="selectedLocale = 'es'"
+        >
+          {{ t('header.langEs') }}
+        </button>
+      </div>
 
       <div class="auth-card__avatar">
         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -101,7 +133,7 @@ async function handleSubmit() {
               v-model="password"
               :type="showPass ? 'text' : 'password'"
               class="form-field__input"
-              placeholder="••••••••"
+              placeholder="********"
               minlength="6"
               autocomplete="new-password"
               required
@@ -161,7 +193,7 @@ async function handleSubmit() {
 </template>
 
 <style scoped lang="scss">
-@import "@/assets/styles/auth-form";
+@use "@/assets/styles/auth-form";
 
 .terms-check {
   display: flex;
@@ -212,4 +244,28 @@ async function handleSubmit() {
 
   &:hover { color: $color-cyan; }
 }
+
+.auth-lang {
+  margin-left: auto;
+  display: inline-flex;
+  border: 1px solid rgba($color-cyan, 0.35);
+  border-radius: $radius-full;
+  overflow: hidden;
+
+  &__btn {
+    background: transparent;
+    border: none;
+    color: rgba($color-white, 0.75);
+    font-size: $font-size-xs;
+    font-weight: 700;
+    padding: 5px 9px;
+    cursor: pointer;
+
+    &--active {
+      background: rgba($color-cyan, 0.24);
+      color: $color-white;
+    }
+  }
+}
 </style>
+

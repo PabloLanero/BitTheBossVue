@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 interface Feature {
-  icon: string;
-  title: string;
-  desc: string;
+  icon: string
+  title: string
+  desc: string
 }
 
-const features: Feature[] = [
+const features = computed<Feature[]>(() => [
   { icon: 'person', title: t('home.feature1Title'), desc: t('home.feature1Desc') },
-  { icon: 'play',   title: t('home.feature2Title'), desc: t('home.feature2Desc') },
-  { icon: 'play',   title: t('home.feature3Title'), desc: t('home.feature3Desc') },
-];
+  { icon: 'play', title: t('home.feature2Title'), desc: t('home.feature2Desc') },
+  { icon: 'play', title: t('home.feature3Title'), desc: t('home.feature3Desc') },
+])
 
-const activeIndex = ref(1);
+const activeIndex = ref(1)
 </script>
 
 <template>

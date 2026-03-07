@@ -1,15 +1,31 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import Logo from '@/components/Logo/Logo.vue'
 import { useLogin } from '@/stores/LoginStore'
+import { SUPPORTED_LOCALES, type AppLocale, setAppLocale } from '@/i18n/i18n'
 
 const router   = useRouter()
 const loginStore = useLogin()
+const { locale, t } = useI18n()
 
 const isLoggedIn = computed(() => loginStore.isAuthenticated || !!localStorage.getItem('token'))
-const userName   = computed(() => localStorage.getItem('auth_name') ?? 'My Profile')
+const userName = computed(() => localStorage.getItem('auth_name') ?? t('header.profileFallback'))
 const gameRoute = computed(() => (isLoggedIn.value ? '/history' : '/Login'))
+
+const selectedLocale = computed<AppLocale>({
+  get: () => {
+    if (SUPPORTED_LOCALES.includes(locale.value as AppLocale)) {
+      return locale.value as AppLocale
+    }
+    return 'en'
+  },
+  set: (nextLocale) => {
+    if (!SUPPORTED_LOCALES.includes(nextLocale)) return
+    setAppLocale(nextLocale)
+  },
+})
 
 function logout() {
   loginStore.logout()
@@ -27,13 +43,31 @@ function logout() {
       </button>
 
       <nav class="site-header__nav">
-        <RouterLink :to="gameRoute" class="nav-link">{{ $t('header.game') }}</RouterLink>
-        <RouterLink to="/game" class="nav-link">{{ $t('header.factions') }}</RouterLink>
-        <RouterLink to="/factions" class="nav-link">{{ $t('header.community') }}</RouterLink>
+        <RouterLink :to="gameRoute" class="nav-link">{{ $t('header.games') }}</RouterLink>
+        <RouterLink to="/factions" class="nav-link">{{ $t('header.factions') }}</RouterLink>
         <RouterLink to="/community" class="nav-link">{{ $t('header.communityLink') }}</RouterLink>
       </nav>
 
       <div class="site-header__actions">
+        <div class="lang-switch" role="group" :aria-label="$t('header.languageLabel')">
+          <button
+            type="button"
+            class="lang-switch__btn"
+            :class="{ 'lang-switch__btn--active': selectedLocale === 'en' }"
+            @click="selectedLocale = 'en'"
+          >
+            {{ $t('header.langEn') }}
+          </button>
+          <button
+            type="button"
+            class="lang-switch__btn"
+            :class="{ 'lang-switch__btn--active': selectedLocale === 'es' }"
+            @click="selectedLocale = 'es'"
+          >
+            {{ $t('header.langEs') }}
+          </button>
+        </div>
+
         <template v-if="isLoggedIn">
           <RouterLink to="/Profile" class="preorder-btn preorder-btn--user">
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -111,6 +145,35 @@ function logout() {
   &.router-link-active {
     color: $color-cyan;
     text-shadow: $glow-cyan;
+  }
+}
+
+.lang-switch {
+  display: inline-flex;
+  border: 1px solid rgba($color-cyan, 0.35);
+  border-radius: $radius-full;
+  overflow: hidden;
+
+  &__btn {
+    background: transparent;
+    border: none;
+    color: rgba($color-white, 0.75);
+    font-size: $font-size-xs;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 6px 9px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover {
+      color: $color-white;
+      background: rgba($color-cyan, 0.12);
+    }
+
+    &--active {
+      background: rgba($color-cyan, 0.24);
+      color: $color-white;
+    }
   }
 }
 

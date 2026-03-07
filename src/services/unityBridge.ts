@@ -70,6 +70,10 @@ export function unregisterUnityInstance(): void {
   devLog('Unity instance unregistered')
 }
 
+export function getUnityInstance(): UnityInstance | null {
+  return unityInstance
+}
+
 export function sendTokenToUnity(token?: string | null): void {
   const nextToken = normalizeToken(token)
 

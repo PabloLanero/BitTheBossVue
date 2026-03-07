@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 const emit = defineEmits<{
   cancel: []
   confirm: []
 }>()
+
+const { t } = useI18n()
 
 function onOverlayClick(e: MouseEvent) {
   if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
@@ -23,19 +27,19 @@ function onOverlayClick(e: MouseEvent) {
                 <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
               </svg>
             </span>
-            <h2 class="modal__title">Log Out?</h2>
+            <h2 class="modal__title">{{ t('logoutModal.title') }}</h2>
           </div>
 
           <p class="modal__body">
-            Are you sure you want to log out? You will need to log in again to access your profile.
+            {{ t('logoutModal.body') }}
           </p>
 
           <div class="modal__actions">
             <button class="modal__btn modal__btn--cancel" @click="emit('cancel')">
-              Cancel
+              {{ t('logoutModal.cancel') }}
             </button>
             <button class="modal__btn modal__btn--confirm" @click="emit('confirm')">
-              Log Out
+              {{ t('logoutModal.confirm') }}
             </button>
           </div>
 

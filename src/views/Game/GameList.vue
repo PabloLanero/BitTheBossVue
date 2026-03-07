@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header/Header.vue'
 import type { MatchHistoryItem, MatchResultStatus } from '@/models/GameHistory'
@@ -8,12 +9,14 @@ import { getHistoryEntries } from '@/utils/gameHistory'
 type StatusFilter = 'All' | MatchResultStatus
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const loading = ref(true)
 const searchText = ref('')
 const selectedStatus = ref<StatusFilter>('All')
 const rows = ref<MatchHistoryItem[]>([])
 
 const statusFilters: StatusFilter[] = ['All', 'Win', 'Loss', 'Cancelled']
+const dateLocale = computed(() => (locale.value === 'es' ? 'es-ES' : 'en-US'))
 
 const statusCounts = computed(() => ({
   Win: rows.value.filter((item) => item.status === 'Win').length,
@@ -37,8 +40,8 @@ const filteredRows = computed(() => {
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'No date'
-  return new Intl.DateTimeFormat('en-US', {
+  if (Number.isNaN(date.getTime())) return t('gameHistory.noDate')
+  return new Intl.DateTimeFormat(dateLocale.value, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)
@@ -46,6 +49,11 @@ function formatDate(value: string): string {
 
 function statusClass(status: MatchResultStatus): string {
   return `status-${status.toLowerCase()}`
+}
+
+function statusLabel(status: StatusFilter | MatchResultStatus): string {
+  if (status === 'All') return t('gameHistory.filters.all')
+  return t(`gameHistory.status.${status.toLowerCase()}`)
 }
 
 onMounted(() => {
@@ -59,18 +67,18 @@ onMounted(() => {
   <section class="game-page">
     <div class="game-shell">
       <div class="game-head">
-        <h1>Match History</h1>
-        <button class="new-btn" @click="router.push('/history/new')">Play New Match</button>
+        <h1>{{ t('gameHistory.title') }}</h1>
+        <button class="new-btn" @click="router.push('/history/new')">{{ t('gameHistory.newMatch') }}</button>
       </div>
 
       <div class="status-resume">
-        <p>Win: {{ statusCounts.Win }}</p>
-        <p>Loss: {{ statusCounts.Loss }}</p>
-        <p>Cancelled: {{ statusCounts.Cancelled }}</p>
+        <p>{{ t('gameHistory.stats.win') }}: {{ statusCounts.Win }}</p>
+        <p>{{ t('gameHistory.stats.loss') }}: {{ statusCounts.Loss }}</p>
+        <p>{{ t('gameHistory.stats.cancelled') }}: {{ statusCounts.Cancelled }}</p>
       </div>
 
       <div class="search-wrap">
-        <input v-model="searchText" type="text" placeholder="Search by name, ID or opponent" />
+        <input v-model="searchText" type="text" :placeholder="t('gameHistory.searchPlaceholder')" />
       </div>
 
       <div class="filters">
@@ -80,22 +88,22 @@ onMounted(() => {
           :class="['filter-btn', { active: selectedStatus === filter }]"
           @click="selectedStatus = filter"
         >
-          {{ filter }}
+          {{ statusLabel(filter) }}
         </button>
       </div>
 
-      <div v-if="loading" class="empty">Loading history...</div>
-      <div v-else-if="filteredRows.length === 0" class="empty">No matches in history.</div>
+      <div v-if="loading" class="empty">{{ t('gameHistory.loading') }}</div>
+      <div v-else-if="filteredRows.length === 0" class="empty">{{ t('gameHistory.empty') }}</div>
 
       <div v-else class="list">
         <article v-for="row in filteredRows" :key="row.id" class="row">
           <div class="row__main">
             <h2>{{ row.partidaNombre }}</h2>
-            <p>ID: {{ row.partidaId }}</p>
+            <p>{{ t('gameHistory.labels.id') }}: {{ row.partidaId }}</p>
             <p>{{ row.opponentLabel }}</p>
-            <p>Finished: {{ formatDate(row.finishedAt) }}</p>
+            <p>{{ t('gameHistory.labels.finished') }}: {{ formatDate(row.finishedAt) }}</p>
           </div>
-          <span class="status-pill" :class="statusClass(row.status)">{{ row.status }}</span>
+          <span class="status-pill" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
         </article>
       </div>
     </div>

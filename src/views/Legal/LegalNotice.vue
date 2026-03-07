@@ -1,8 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Header from '@/components/Header/Header.vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const { t, tm } = useI18n()
+
+type LegalSection = {
+  title: string
+  paragraphs: string[]
+  bullets?: string[]
+}
+
+const sections = computed(() => tm('legalNotice.sections') as LegalSection[])
 </script>
 
 <template>
@@ -12,92 +23,27 @@ const router = useRouter()
 
       <button class="back-btn" @click="router.back()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Back
+        {{ t('legalCommon.back') }}
       </button>
 
       <div class="legal-header">
-        <p class="legal-header__label">Legal</p>
-        <h1 class="legal-header__title">Legal Notice</h1>
-        <p class="legal-header__date">Last updated: March 2025</p>
+        <p class="legal-header__label">{{ t('legalCommon.label') }}</p>
+        <h1 class="legal-header__title">{{ t('legalNotice.title') }}</h1>
+        <p class="legal-header__date">{{ t('legalCommon.lastUpdated') }}</p>
       </div>
 
       <div class="legal-body">
-
-        <section class="legal-section">
-          <h2>1. Owner Information</h2>
-          <p>
-            This platform (<strong>BitTheBoss</strong>) is operated as an academic project developed for
-            educational purposes. The platform is not a commercial product and is not intended for
-            commercial use, distribution, or monetization.
-          </p>
-          <ul>
-            <li><strong>Project name:</strong> BitTheBoss</li>
-            <li><strong>Nature:</strong> Academic / Educational project</li>
-            <li><strong>Contact:</strong> bittheboss@example.com</li>
+        <section v-for="section in sections" :key="section.title" class="legal-section">
+          <h2>{{ section.title }}</h2>
+          <p v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</p>
+          <ul v-if="section.bullets?.length">
+            <li v-for="bullet in section.bullets" :key="bullet">{{ bullet }}</li>
           </ul>
         </section>
-
-        <section class="legal-section">
-          <h2>2. Purpose of the Platform</h2>
-          <p>
-            BitTheBoss is a competitive strategy game platform built as a final-year academic project.
-            Its purpose is to demonstrate the integration of a Vue.js frontend, a .NET backend,
-            and a Unity WebGL game client within a single full-stack application.
-          </p>
-          <p>
-            All gameplay data, rankings, and user profiles are generated within the scope of this
-            academic demonstration and have no commercial value.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2>3. Intellectual Property</h2>
-          <p>
-            All original content on this platform — including but not limited to design, source code,
-            game assets, faction lore, and interface elements — is the intellectual property of its
-            respective authors and is protected under applicable copyright law.
-          </p>
-          <p>
-            Reproduction, distribution, or public communication of any content without prior written
-            authorization from the authors is strictly prohibited, except where permitted by law.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2>4. Disclaimer of Liability</h2>
-          <p>
-            The platform is provided <em>"as is"</em> for academic demonstration purposes. The authors
-            make no warranties, express or implied, regarding the accuracy, reliability, or
-            availability of the service. The authors shall not be liable for any direct or indirect
-            damages arising from use of the platform.
-          </p>
-          <p>
-            The platform may contain links to third-party services. The authors are not responsible
-            for the content or privacy practices of those services.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2>5. Applicable Law</h2>
-          <p>
-            This legal notice is governed by Spanish law. Any disputes arising from or related to
-            the use of this platform shall be subject to the jurisdiction of the competent courts
-            of Spain.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2>6. Modifications</h2>
-          <p>
-            The authors reserve the right to modify this legal notice at any time. Continued use
-            of the platform after any such change constitutes acceptance of the updated terms.
-          </p>
-        </section>
-
       </div>
 
       <div class="legal-footer">
-        <RouterLink to="/privacy" class="legal-footer__link">Privacy Policy →</RouterLink>
+        <RouterLink to="/privacy" class="legal-footer__link">{{ t('legalNotice.footerLink') }}</RouterLink>
       </div>
 
     </div>
@@ -234,3 +180,5 @@ const router = useRouter()
   }
 }
 </style>
+
+
