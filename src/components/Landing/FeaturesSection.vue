@@ -11,9 +11,9 @@ interface Feature {
 }
 
 const features: Feature[] = [
-  { icon: 'person', title: t('landing.feature1Title'), desc: t('landing.feature1Desc') },
-  { icon: 'play',   title: t('landing.feature2Title'), desc: t('landing.feature2Desc') },
-  { icon: 'play',   title: t('landing.feature3Title'), desc: t('landing.feature3Desc') },
+  { icon: 'person', title: t('home.feature1Title'), desc: t('home.feature1Desc') },
+  { icon: 'play',   title: t('home.feature2Title'), desc: t('home.feature2Desc') },
+  { icon: 'play',   title: t('home.feature3Title'), desc: t('home.feature3Desc') },
 ];
 
 const activeIndex = ref(1);
@@ -23,7 +23,7 @@ const activeIndex = ref(1);
   <section class="features">
     <div class="features__inner">
       <div class="features__header">
-        <h2 class="features__title">{{ t('landing.featuresTitle') }}</h2>
+        <h2 class="features__title">{{ t('home.featuresTitle') }}</h2>
         <div class="features__divider" />
       </div>
 

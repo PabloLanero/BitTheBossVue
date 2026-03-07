@@ -36,9 +36,10 @@ function parseJwt(token: string): Record<string, any> | null {
   try {
     const payload = token.split('.')[1]
     if (!payload) return null
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4)
     const json = decodeURIComponent(
-      atob(base64)
+      atob(padded)
         .split('')
         .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
         .join(''),
@@ -183,7 +184,7 @@ onMounted(async () => {
     <div class="profile-topbar">
       <Logo :width="60" :height="48" />
       <div class="profile-topbar__right">
-        <button class="back-btn" @click="router.push('/Landing')">
+        <button class="back-btn" @click="router.push('/Home')">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
           Volver al Inicio
         </button>

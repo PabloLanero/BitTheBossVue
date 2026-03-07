@@ -12,14 +12,14 @@ const router = useRouter();
     <div class="hero__bg-grid" aria-hidden="true" />
 
     <div class="hero__content">
-      <h1 class="hero__title">{{ t('landing.heroTitle') }}</h1>
+      <h1 class="hero__title">{{ t('home.heroTitle') }}</h1>
 
       <div class="hero__card">
         <div class="hero__card-left">
-          <p class="hero__subtitle">{{ t('landing.heroSubtitle') }}</p>
+          <p class="hero__subtitle">{{ t('home.heroSubtitle') }}</p>
           <div class="hero__actions">
-            <Button :text="t('landing.playDemo')" color="#1af0ff" variant="tonal"  rounded="xl" @click="router.push('/Login')" />
-            <Button :text="t('landing.learnMore')" color="#e8f8ff" variant="outlined" rounded="xl" />
+            <Button :text="t('home.playDemo')" color="#1af0ff" variant="tonal"  rounded="xl" @click="router.push('/Login')" />
+            <Button :text="t('home.learnMore')" color="#e8f8ff" variant="outlined" rounded="xl" />
           </div>
         </div>
 

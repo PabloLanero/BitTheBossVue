@@ -9,6 +9,7 @@ const loginStore = useLogin()
 
 const isLoggedIn = computed(() => loginStore.isAuthenticated || !!localStorage.getItem('token'))
 const userName   = computed(() => localStorage.getItem('auth_name') ?? 'Mi Perfil')
+const gameRoute = computed(() => (isLoggedIn.value ? '/game' : '/Login'))
 
 function logout() {
   loginStore.logout()
@@ -21,14 +22,14 @@ function logout() {
 <template>
   <header class="site-header">
     <div class="site-header__inner">
-      <RouterLink to="/" class="site-header__logo">
+      <button type="button" class="site-header__logo" @click="router.push('/Home')">
         <Logo :width="110" :height="44" />
-      </RouterLink>
+      </button>
 
       <nav class="site-header__nav">
-        <RouterLink to="#game"      class="nav-link">{{ $t('header.game') }}</RouterLink>
-        <RouterLink to="#factions"  class="nav-link">{{ $t('header.factions') }}</RouterLink>
-        <RouterLink to="#community" class="nav-link">{{ $t('header.community') }}</RouterLink>
+        <RouterLink :to="gameRoute" class="nav-link">{{ $t('header.game') }}</RouterLink>
+        <RouterLink to="/unity" class="nav-link">{{ $t('header.factions') }}</RouterLink>
+        <RouterLink to="/Home" class="nav-link">{{ $t('header.community') }}</RouterLink>
       </nav>
 
       <div class="site-header__actions">
@@ -77,6 +78,10 @@ function logout() {
   &__logo {
     flex-shrink: 0;
     text-decoration: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
   }
 
   &__nav {

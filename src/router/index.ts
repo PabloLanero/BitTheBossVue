@@ -5,12 +5,12 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/Landing',
+      redirect: '/Home',
       component: () => import('@/views/Main.vue'),
       children: [
         {
-          path: '/Landing',
-          component: () => import('@/views/Landing/Landing.vue'),
+          path: '/Home',
+          component: () => import('@/views/Home/Home.vue'),
           meta: {
             miVariable: 'SuValor'
           }
@@ -28,6 +28,16 @@ const router = createRouter({
     {
       path: '/Profile',
       component: () => import('@/views/Profile/Profile.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/game',
+      component: () => import('@/views/Game/GameList.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/game/new',
+      component: () => import('@/views/Game/CreateGame.vue'),
       meta: { requiresAuth: true },
     },
     {

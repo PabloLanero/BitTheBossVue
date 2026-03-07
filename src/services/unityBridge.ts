@@ -26,7 +26,7 @@ function normalizeToken(token?: string | null): string {
 }
 
 export function readStoredSessionToken(): string {
-  return normalizeToken(localStorage.getItem(TOKEN_STORAGE_KEY))
+  return normalizeToken(localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem('token'))
 }
 
 function persistSessionToken(token: string): void {

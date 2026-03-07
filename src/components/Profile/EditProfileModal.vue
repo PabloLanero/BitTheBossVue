@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useConstants } from '@/stores/Constants'
 
 const props = defineProps<{
   visible: boolean
@@ -12,6 +13,7 @@ const emit = defineEmits<{
   close: []
   saved: [name: string, email: string]
 }>()
+const { ApiUrl } = useConstants()
 
 const name     = ref('')
 const email    = ref('')
@@ -42,7 +44,7 @@ async function handleSave() {
     if (!token) throw new Error('No hay sesión activa.')
 
     if (props.userId != null) {
-      const res = await fetch(`http://localhost:5211/Usuario/${props.userId}`, {
+      const res = await fetch(`${ApiUrl}/Usuario/${props.userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

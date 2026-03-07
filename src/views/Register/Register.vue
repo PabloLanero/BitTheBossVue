@@ -29,7 +29,7 @@ async function handleSubmit() {
     await registerStore.register(data)
     localStorage.setItem('auth_name', data.userName)
     localStorage.setItem('auth_email', data.email)
-    router.push('/Profile')
+    router.push('/game')
   } catch (error) {
     errorMsg.value = error instanceof Error ? error.message : 'Error al crear la cuenta. Inténtalo de nuevo.'
   } finally {

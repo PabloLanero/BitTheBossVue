@@ -20,7 +20,7 @@ export const i18n = createI18n({
             signin: 'Registrarse',
             login: 'Iniciar sesion'
         },
-        landing: {
+        home: {
             heroTitle: 'Master the Cosmos',
             heroSubtitle: 'A universe of strategic conquest across our intuitive platform.',
             playDemo: 'Play Demo',

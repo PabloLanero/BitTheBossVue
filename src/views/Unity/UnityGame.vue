@@ -3,8 +3,11 @@
   <section class="unity-page">
     <div class="unity-shell">
       <header class="unity-header">
-        <h1>BitTheBoss</h1>
-        <p>Unity WebGL</p>
+        <div>
+          <h1>BitTheBoss</h1>
+          <p>Unity WebGL</p>
+        </div>
+        <button class="finish-btn" type="button" @click="openExitModal">Terminar partida</button>
       </header>
 
       <div class="unity-wrapper">
@@ -16,14 +19,40 @@
           <p>Error cargando Unity: {{ error }}</p>
         </div>
       </div>
+
+      <div v-if="showExitModal" class="modal-backdrop">
+        <div class="modal-card">
+          <h3>Terminar partida</h3>
+          <p>Selecciona el estado con el que quieres registrar la partida en el historial.</p>
+          <p v-if="exitError" class="modal-error">{{ exitError }}</p>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn secondary" :disabled="exiting" @click="cancelExitModal">
+              Cancelar
+            </button>
+            <button type="button" class="modal-btn victory" :disabled="exiting" @click="finishMatch('Victoria')">
+              Victoria
+            </button>
+            <button type="button" class="modal-btn defeat" :disabled="exiting" @click="finishMatch('Derrota')">
+              Derrota
+            </button>
+            <button type="button" class="modal-btn cancel" :disabled="exiting" @click="finishMatch('Cancelada')">
+              Cancelada
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import Header from '@/components/Header/Header.vue'
+import { addHistoryEntry } from '@/utils/gameHistory'
+import type { MatchResultStatus } from '@/models/GameHistory'
 import {
+  UNITY_SESSION_GAME_OBJECT,
   TOKEN_CHANGED_EVENT,
   type UnityInstance,
   readStoredSessionToken,
@@ -35,7 +64,17 @@ import {
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const loading = ref(true)
 const error = ref('')
+const exiting = ref(false)
+const showExitModal = ref(false)
+const exitError = ref('')
+
 const UNITY_LOADER_ID = 'unity-loader-script'
+const UNITY_BUILD_NAME = (import.meta.env.VITE_UNITY_BUILD_NAME || 'BuildUnity').trim()
+const UNITY_BUILD_BASE = `/unity/Build/${UNITY_BUILD_NAME}`
+const UNITY_LOADER_SRC = `${UNITY_BUILD_BASE}.loader.js`
+
+const route = useRoute()
+const router = useRouter()
 
 interface UnityConfig {
   dataUrl: string
@@ -58,6 +97,7 @@ declare global {
 
 let localUnityInstance: UnityInstance | null = null
 let hasUnityBooted = false
+let isTearingDown = false
 
 function devLog(message: string, details?: unknown): void {
   if (!import.meta.env.DEV) return
@@ -73,6 +113,84 @@ function onTokenChanged(event: Event): void {
   sendTokenToUnity(customEvent.detail ?? '')
 }
 
+function requestUnityPause(paused: boolean): void {
+  if (!localUnityInstance) return
+
+  try {
+    localUnityInstance.SendMessage(
+      UNITY_SESSION_GAME_OBJECT,
+      paused ? 'PauseGameForModal' : 'ResumeGameAfterModal',
+    )
+  } catch (pauseError) {
+    console.warn('[UnityGame] No se pudo pausar/reanudar Unity:', pauseError)
+  }
+}
+
+function openExitModal(): void {
+  if (exiting.value) return
+  exitError.value = ''
+  showExitModal.value = true
+  requestUnityPause(true)
+}
+
+function cancelExitModal(): void {
+  if (exiting.value) return
+  showExitModal.value = false
+  exitError.value = ''
+  requestUnityPause(false)
+}
+
+async function teardownUnity(reason: string): Promise<void> {
+  if (isTearingDown) return
+  isTearingDown = true
+
+  const instance = localUnityInstance
+  localUnityInstance = null
+  unregisterUnityInstance()
+
+  try {
+    if (instance?.Quit) {
+      devLog('Closing Unity runtime', { reason })
+      await instance.Quit()
+    }
+  } catch (quitError) {
+    console.warn('[UnityGame] Error cerrando Unity:', quitError)
+  } finally {
+    hasUnityBooted = false
+    isTearingDown = false
+  }
+}
+
+async function finishMatch(status: MatchResultStatus): Promise<void> {
+  if (exiting.value) return
+
+  try {
+    exiting.value = true
+    exitError.value = ''
+
+    const partidaId = typeof route.query.partidaId === 'string' ? route.query.partidaId : `partida-${Date.now()}`
+    const partidaNombreQuery = typeof route.query.gameName === 'string' ? route.query.gameName.trim() : ''
+    const opponentLabelQuery = typeof route.query.opponentLabel === 'string' ? route.query.opponentLabel.trim() : ''
+
+    addHistoryEntry({
+      partidaId,
+      partidaNombre: partidaNombreQuery || partidaId,
+      opponentLabel: opponentLabelQuery || 'VS IA - Normal',
+      status,
+    })
+
+    showExitModal.value = false
+    requestUnityPause(false)
+    await teardownUnity('finish-match')
+    await router.push('/game')
+  } catch (finishError) {
+    exiting.value = false
+    exitError.value =
+      finishError instanceof Error ? finishError.message : 'No se pudo terminar la partida'
+    requestUnityPause(false)
+  }
+}
+
 function initializeUnity(canvas: HTMLCanvasElement): void {
   if (hasUnityBooted) return
 
@@ -85,9 +203,9 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
   hasUnityBooted = true
 
   const unityConfig: UnityConfig = {
-    dataUrl: '/unity/Build/BuildUnity.data.unityweb',
-    frameworkUrl: '/unity/Build/BuildUnity.framework.js.unityweb',
-    codeUrl: '/unity/Build/BuildUnity.wasm.unityweb',
+    dataUrl: `${UNITY_BUILD_BASE}.data.unityweb`,
+    frameworkUrl: `${UNITY_BUILD_BASE}.framework.js.unityweb`,
+    codeUrl: `${UNITY_BUILD_BASE}.wasm.unityweb`,
     streamingAssetsUrl: '/unity/StreamingAssets',
     companyName: 'DefaultCompany',
     productName: 'BitTheBoss',
@@ -127,6 +245,7 @@ onMounted(async () => {
     const handleLoaderReady = () => {
       devLog('Unity loader cargado', {
         canvasId: canvas.id,
+        loaderSrc: UNITY_LOADER_SRC,
         unityAvailable: typeof window.createUnityInstance !== 'undefined',
       })
       initializeUnity(canvas)
@@ -135,14 +254,14 @@ onMounted(async () => {
     const handleLoaderError = () => {
       error.value = 'Error al cargar el script del loader de Unity'
       loading.value = false
-      console.error('[UnityGame] Error cargando script loader:', '/unity/Build/BuildUnity.loader.js')
+      console.error('[UnityGame] Error cargando script loader:', UNITY_LOADER_SRC)
     }
 
     let loaderScript = document.getElementById(UNITY_LOADER_ID) as HTMLScriptElement | null
     if (!loaderScript) {
       loaderScript = document.createElement('script')
       loaderScript.id = UNITY_LOADER_ID
-      loaderScript.src = '/unity/Build/BuildUnity.loader.js'
+      loaderScript.src = UNITY_LOADER_SRC
       loaderScript.type = 'text/javascript'
       loaderScript.addEventListener('load', handleLoaderReady, { once: true })
       loaderScript.addEventListener('error', handleLoaderError, { once: true })
@@ -160,13 +279,15 @@ onMounted(async () => {
   }
 })
 
+onBeforeRouteLeave(async () => {
+  await teardownUnity('route-leave')
+})
+
 onBeforeUnmount(() => {
   window.removeEventListener(TOKEN_CHANGED_EVENT, onTokenChanged as EventListener)
-  if (localUnityInstance) {
-    unregisterUnityInstance()
-    localUnityInstance = null
+  if (!isTearingDown) {
+    void teardownUnity('component-unmount')
   }
-  hasUnityBooted = false
 })
 </script>
 
@@ -188,7 +309,7 @@ onBeforeUnmount(() => {
 .unity-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   color: #e6f8ff;
   margin-bottom: 10px;
 }
@@ -201,6 +322,21 @@ onBeforeUnmount(() => {
 .unity-header p {
   color: #97feed;
   font-size: 0.9rem;
+}
+
+.finish-btn {
+  border: 1.5px solid rgba(151, 254, 237, 0.6);
+  background: rgba(151, 254, 237, 0.14);
+  color: #e6f8ff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.finish-btn:hover {
+  background: rgba(151, 254, 237, 0.22);
 }
 
 .unity-wrapper {
@@ -249,6 +385,72 @@ onBeforeUnmount(() => {
 .error-overlay p {
   text-align: center;
   max-width: 80%;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.modal-card {
+  width: min(560px, 92vw);
+  background: #071952;
+  border: 1px solid rgba(151, 254, 237, 0.4);
+  border-radius: 14px;
+  padding: 16px;
+  color: #e6f8ff;
+}
+
+.modal-card h3 {
+  margin-bottom: 6px;
+}
+
+.modal-card p {
+  color: rgba(230, 248, 255, 0.86);
+  font-size: 0.95rem;
+}
+
+.modal-error {
+  color: #ffb4b4 !important;
+  margin-top: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.modal-btn {
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border: 1px solid rgba(151, 254, 237, 0.45);
+  color: #e6f8ff;
+}
+
+.modal-btn.secondary {
+  background: transparent;
+}
+
+.modal-btn.victory {
+  background: rgba(151, 254, 237, 0.18);
+}
+
+.modal-btn.defeat {
+  background: rgba(255, 180, 180, 0.18);
+}
+
+.modal-btn.cancel {
+  background: rgba(255, 228, 181, 0.15);
 }
 
 @media (max-width: 900px) {

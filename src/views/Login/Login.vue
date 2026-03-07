@@ -22,7 +22,7 @@ async function handleSubmit() {
     const credentials: Login = { email: email.value, password: password.value }
     await loginStore.login(credentials)
     localStorage.setItem('auth_email', credentials.email)
-    router.push('/Profile')
+    router.push('/game')
   } catch (error) {
     errorMsg.value = error instanceof Error ? error.message : 'Credenciales incorrectas. Inténtalo de nuevo.'
   } finally {
@@ -91,7 +91,7 @@ async function handleSubmit() {
         </div>
 
         <div class="auth-forgot">
-          <a href="#" class="forgot-link">{{ t('loginPage.forgotPassword') }}</a>
+          <button type="button" class="forgot-link">{{ t('loginPage.forgotPassword') }}</button>
         </div>
 
         <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
@@ -118,4 +118,11 @@ async function handleSubmit() {
 
 <style scoped lang="scss">
 @import "@/assets/styles/auth-form";
+
+.forgot-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
 </style>
