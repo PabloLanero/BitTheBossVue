@@ -50,11 +50,8 @@ async function handleCreate(): Promise<void> {
 
   try {
     const idPartida = buildIdPartida(gameName.value.trim())
-    const secondUser = myUserId.value as number
     const payload: CreatePartidaDTO = {
       idPartida,
-      arrUsuario: [myUserId.value as number, secondUser],
-      lstNodos: [],
     }
 
     await createPartida(payload)

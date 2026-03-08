@@ -123,7 +123,8 @@ export const en = {
       goToGame: 'Go to Game',
     },
     errors: {
-      required: 'Please fill in all required fields to create the match.',
+      required: 'You must enter the match name/ID.',
+      rivalMustBeDifferent: 'Rival user must be different from your user.',
       create: 'Could not create the match',
     },
     success: 'Match created successfully: {id}',

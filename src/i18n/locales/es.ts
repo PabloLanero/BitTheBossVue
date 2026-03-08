@@ -123,7 +123,8 @@ export const es = {
       goToGame: 'Ir al juego',
     },
     errors: {
-      required: 'Completa todos los campos obligatorios para crear la partida.',
+      required: 'Debes indicar el nombre/ID de la partida.',
+      rivalMustBeDifferent: 'El usuario rival debe ser distinto a tu usuario.',
       create: 'No se pudo crear la partida',
     },
     success: 'Partida creada correctamente: {id}',

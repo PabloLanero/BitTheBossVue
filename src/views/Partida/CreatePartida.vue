@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header/Header.vue'
@@ -10,58 +10,13 @@ const router = useRouter()
 const { t } = useI18n()
 const { createPartida } = usePartida()
 
-  const idPartida = ref(`match-${Date.now()}`)
-const ownerUserId = ref<number | null>(null)
-const rivalUserId = ref<number | null>(null)
-const nodosRaw = ref('')
+const idPartida = ref(`match-${Date.now()}`)
 const loading = ref(false)
 const errorMsg = ref('')
 const successMsg = ref('')
 
-function parseJwt(token: string): Record<string, unknown> | null {
-  try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-    const json = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
-        .join(''),
-    )
-    return JSON.parse(json)
-  } catch {
-    return null
-  }
-}
-
-function parseUserIdFromToken(): number | null {
-  const token = localStorage.getItem('token')
-  if (!token) return null
-
-  const claims = parseJwt(token)
-  if (!claims) return null
-
-  const rawId =
-    claims.nameid ??
-    claims.sub ??
-    claims.userId ??
-    claims.userid ??
-    claims.id ??
-    claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-
-  const parsed = Number(rawId)
-  return Number.isNaN(parsed) ? null : parsed
-}
-
 const canSubmit = computed(() => {
-  return !!idPartida.value.trim() && ownerUserId.value !== null
-})
-
-onMounted(() => {
-  const userId = parseUserIdFromToken()
-  ownerUserId.value = userId
-  rivalUserId.value = userId
+  return !!idPartida.value.trim()
 })
 
 async function handleCreatePartida(): Promise<void> {
@@ -76,16 +31,8 @@ async function handleCreatePartida(): Promise<void> {
   loading.value = true
 
   try {
-    const arrUsuario = [ownerUserId.value as number, (rivalUserId.value ?? ownerUserId.value) as number]
-    const nodos = nodosRaw.value
-      .split(',')
-      .map((item) => Number(item.trim()))
-      .filter((n) => !Number.isNaN(n))
-
     const payload: CreatePartidaDTO = {
       idPartida: idPartida.value.trim(),
-      arrUsuario,
-      lstNodos: nodos,
     }
 
     const created = await createPartida(payload)
@@ -109,21 +56,6 @@ async function handleCreatePartida(): Promise<void> {
         <label>
           {{ t('createPartida.labels.matchId') }}
           <input v-model="idPartida" type="text" required />
-        </label>
-
-        <label>
-          {{ t('createPartida.labels.owner') }}
-          <input :value="ownerUserId ?? ''" type="number" readonly />
-        </label>
-
-        <label>
-          {{ t('createPartida.labels.rival') }}
-          <input v-model.number="rivalUserId" type="number" />
-        </label>
-
-        <label>
-          {{ t('createPartida.labels.nodes') }}
-          <input v-model="nodosRaw" type="text" :placeholder="t('createPartida.nodePlaceholder')" />
         </label>
 
         <div class="actions">

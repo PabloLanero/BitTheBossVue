@@ -15,6 +15,21 @@ export interface PartidaListItem {
 export const usePartida = () => {
   const { ApiUrl } = useConstants()
 
+  async function getErrorMessage(response: Response, fallback: string): Promise<string> {
+    const raw = await response.text().catch(() => '')
+    if (!raw) return `${fallback} (HTTP ${response.status})`
+
+    try {
+      const parsed = JSON.parse(raw) as { message?: string; title?: string; error?: string }
+      const message = parsed.message ?? parsed.title ?? parsed.error
+      if (message) return `${message} (HTTP ${response.status})`
+    } catch {
+      // Not JSON, return plain text below.
+    }
+
+    return `${raw} (HTTP ${response.status})`
+  }
+
   function getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token')
     if (!token) throw new Error('No active session')
@@ -34,8 +49,7 @@ export const usePartida = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error creating match' }))
-      throw new Error(error.message ?? 'Error creating match')
+      throw new Error(await getErrorMessage(response, 'Error creating match'))
     }
 
     const data = (await response.json()) as PartidaCreatedResponse
@@ -48,8 +62,7 @@ export const usePartida = () => {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error loading matches' }))
-      throw new Error(error.message ?? 'Error loading matches')
+      throw new Error(await getErrorMessage(response, 'Error loading matches'))
     }
 
     return (await response.json()) as PartidaListItem[]
