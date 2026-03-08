@@ -3,6 +3,10 @@ export interface UnityInstance {
   Quit?: () => Promise<void>
 }
 
+export interface SendTokenOptions {
+  force?: boolean
+}
+
 export const UNITY_SESSION_GAME_OBJECT = 'EconomyManager'
 export const UNITY_SESSION_METHOD = 'SetSessionToken'
 export const TOKEN_STORAGE_KEY = 'session_token'
@@ -22,7 +26,7 @@ function devLog(message: string, details?: unknown): void {
 }
 
 function normalizeToken(token?: string | null): string {
-  return token ?? ''
+  return (token ?? '').trim()
 }
 
 export function readStoredSessionToken(): string {
@@ -74,24 +78,27 @@ export function getUnityInstance(): UnityInstance | null {
   return unityInstance
 }
 
-export function sendTokenToUnity(token?: string | null): void {
+export function sendTokenToUnity(token?: string | null, options?: SendTokenOptions): boolean {
   const nextToken = normalizeToken(token)
+  const force = Boolean(options?.force)
 
   if (!unityReady || !unityInstance) {
     devLog('Skipped token send: Unity is not ready')
-    return
+    return false
   }
 
-  if (lastTokenSentToUnity === nextToken) {
+  if (!force && lastTokenSentToUnity === nextToken) {
     devLog('Skipped token send: token has not changed')
-    return
+    return false
   }
 
   try {
     unityInstance.SendMessage(UNITY_SESSION_GAME_OBJECT, UNITY_SESSION_METHOD, nextToken)
     lastTokenSentToUnity = nextToken
     devLog('Token sent to Unity', { hasToken: Boolean(nextToken) })
+    return true
   } catch (error) {
     devLog('Failed to send token to Unity', error)
+    return false
   }
 }

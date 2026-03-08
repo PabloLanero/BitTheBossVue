@@ -43,7 +43,7 @@ export const es = {
     title: 'Iniciar sesion',
     subtitle: 'Accede a tu cuenta de BitTheBoss',
     emailLabel: 'Correo',
-    emailPlaceholder: 'tu@email.com',
+    emailPlaceholder: 'tu{\'@\'}email.com',
     passwordLabel: 'Contrasena',
     forgotPassword: 'Olvidaste tu contrasena?',
     submitBtn: 'Entrar',
@@ -60,7 +60,7 @@ export const es = {
     userPlaceholder: 'CircuitMaster',
     userHint: 'Minimo 3 caracteres',
     emailLabel: 'Correo',
-    emailPlaceholder: 'tu@email.com',
+    emailPlaceholder: 'tu{\'@\'}email.com',
     passwordLabel: 'Contrasena',
     passwordHint: 'Minimo 6 caracteres',
     termsPrefix: 'Acepto los',
@@ -99,6 +99,7 @@ export const es = {
     },
     errors: {
       required: 'Completa todos los campos obligatorios.',
+      session: 'Sesion no valida. Inicia sesion de nuevo.',
       create: 'No se pudo crear la partida',
     },
     opponentLabel: {
@@ -172,6 +173,17 @@ export const es = {
     },
     defaults: {
       opponentLabel: 'Contra IA - Normal',
+    },
+    tutorial: {
+      title: 'Como jugar',
+      intro: 'Guia rapida para empezar la partida:',
+      steps: {
+        selectBase: 'Haz click izquierdo en una base aliada para seleccionarla.',
+        spawnTroops: 'Usa la barra inferior para crear tropas en tu HQ.',
+        selectTroops: 'Selecciona tropas con click o arrastrando un recuadro.',
+        moveTroops: 'Haz click derecho en una base destino para enviar tus tropas.',
+        winCondition: 'Captura todas las bases enemigas para ganar.',
+      },
     },
     errors: {
       endMatch: 'No se pudo terminar la partida',
@@ -308,7 +320,7 @@ export const es = {
     username: 'Nombre de usuario',
     email: 'Correo',
     usernamePlaceholder: 'Tu nombre de usuario',
-    emailPlaceholder: 'tu@email.com',
+    emailPlaceholder: 'tu{\'@\'}email.com',
     noteLabel: 'Nota:',
     noteText: 'Tu ID de usuario{userId} y la fecha de registro no se pueden modificar.',
     actions: {
@@ -348,7 +360,7 @@ export const es = {
         bullets: [
           'Nombre del proyecto: BitTheBoss',
           'Naturaleza: Proyecto academico / educativo',
-          'Contacto: bittheboss@example.com',
+          'Contacto: bittheboss{\'@\'}example.com',
         ],
       },
       {
@@ -395,7 +407,7 @@ export const es = {
       {
         title: '1. Responsable del tratamiento',
         paragraphs: [
-          'El responsable del tratamiento de esta plataforma es el equipo academico de BitTheBoss. Para consultas relacionadas con privacidad, contacta en: bittheboss@example.com',
+          'El responsable del tratamiento de esta plataforma es el equipo academico de BitTheBoss. Para consultas relacionadas con privacidad, contacta en: bittheboss{\'@\'}example.com',
         ],
       },
       {
@@ -447,7 +459,7 @@ export const es = {
         title: '7. Tus derechos',
         paragraphs: [
           'Segun el RGPD y la normativa espanola aplicable, tienes derecho a:',
-          'Para ejercer cualquiera de estos derechos, contacta en bittheboss@example.com. Tambien tienes derecho a presentar una reclamacion ante la Agencia Espanola de Proteccion de Datos (AEPD) en www.aepd.es.',
+          'Para ejercer cualquiera de estos derechos, contacta en bittheboss{\'@\'}example.com. Tambien tienes derecho a presentar una reclamacion ante la Agencia Espanola de Proteccion de Datos (AEPD) en www.aepd.es.',
         ],
         bullets: [
           'Acceso - solicitar copia de los datos personales que tratamos',

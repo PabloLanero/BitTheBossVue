@@ -43,7 +43,7 @@ export const en = {
     title: 'Log In',
     subtitle: 'Access your BitTheBoss account',
     emailLabel: 'Email',
-    emailPlaceholder: 'you@email.com',
+    emailPlaceholder: 'you{\'@\'}email.com',
     passwordLabel: 'Password',
     forgotPassword: 'Forgot your password?',
     submitBtn: 'Log In',
@@ -60,7 +60,7 @@ export const en = {
     userPlaceholder: 'CircuitMaster',
     userHint: 'Minimum 3 characters',
     emailLabel: 'Email',
-    emailPlaceholder: 'you@email.com',
+    emailPlaceholder: 'you{\'@\'}email.com',
     passwordLabel: 'Password',
     passwordHint: 'Minimum 6 characters',
     termsPrefix: 'I accept the',
@@ -99,6 +99,7 @@ export const en = {
     },
     errors: {
       required: 'Please fill in all required fields.',
+      session: 'Invalid session. Please log in again.',
       create: 'Could not create the match',
     },
     opponentLabel: {
@@ -172,6 +173,17 @@ export const en = {
     },
     defaults: {
       opponentLabel: 'VS AI - Normal',
+    },
+    tutorial: {
+      title: 'How to play',
+      intro: 'Quick guide to start your match:',
+      steps: {
+        selectBase: 'Left-click an allied base to select it.',
+        spawnTroops: 'Use the bottom bar to spawn troops in your HQ.',
+        selectTroops: 'Select troops with a click or by dragging a selection box.',
+        moveTroops: 'Right-click a target base to send your troops.',
+        winCondition: 'Capture all enemy bases to win.',
+      },
     },
     errors: {
       endMatch: 'Could not end the match',
@@ -308,7 +320,7 @@ export const en = {
     username: 'Username',
     email: 'Email',
     usernamePlaceholder: 'Your username',
-    emailPlaceholder: 'you@email.com',
+    emailPlaceholder: 'you{\'@\'}email.com',
     noteLabel: 'Note:',
     noteText: 'Your user ID{userId} and registration date cannot be modified.',
     actions: {
@@ -348,7 +360,7 @@ export const en = {
         bullets: [
           'Project name: BitTheBoss',
           'Nature: Academic / Educational project',
-          'Contact: bittheboss@example.com',
+          'Contact: bittheboss{\'@\'}example.com',
         ],
       },
       {
@@ -395,7 +407,7 @@ export const en = {
       {
         title: '1. Data Controller',
         paragraphs: [
-          'The data controller for this platform is the academic team responsible for the BitTheBoss project. For any privacy-related enquiries, contact us at: bittheboss@example.com',
+          'The data controller for this platform is the academic team responsible for the BitTheBoss project. For any privacy-related enquiries, contact us at: bittheboss{\'@\'}example.com',
         ],
       },
       {
@@ -447,7 +459,7 @@ export const en = {
         title: '7. Your Rights',
         paragraphs: [
           'Under the GDPR and applicable Spanish data protection law, you have the right to:',
-          'To exercise any of these rights, contact us at bittheboss@example.com. You also have the right to lodge a complaint with the Spanish Data Protection Agency (AEPD) at www.aepd.es.',
+          'To exercise any of these rights, contact us at bittheboss{\'@\'}example.com. You also have the right to lodge a complaint with the Spanish Data Protection Agency (AEPD) at www.aepd.es.',
         ],
         bullets: [
           'Access - request a copy of the personal data we hold about you',

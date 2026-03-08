@@ -3,7 +3,6 @@ import { defineStore } from 'pinia'
 
 export const useConstants = defineStore('constants', () => {
   const ApiUrl = 'http://localhost:5211'
-  const SignalRHubPath = '/hubs/match'
 
-  return { ApiUrl, SignalRHubPath }
+  return { ApiUrl }
 })

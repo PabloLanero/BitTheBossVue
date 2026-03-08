@@ -1,9 +1,20 @@
 import type { MatchHistoryItem, MatchResultStatus } from '@/models/GameHistory'
+import { getUserIdFromToken } from '@/utils/auth'
 
-const HISTORY_STORAGE_KEY = 'btb_match_history'
+const HISTORY_STORAGE_KEY_PREFIX = 'btb_match_history'
 
-function readHistory(): MatchHistoryItem[] {
-  const raw = localStorage.getItem(HISTORY_STORAGE_KEY)
+function getCurrentUserId(): number | null {
+  return getUserIdFromToken(localStorage.getItem('token'))
+}
+
+function buildHistoryStorageKey(userId: number | null): string {
+  return userId === null
+    ? `${HISTORY_STORAGE_KEY_PREFIX}:guest`
+    : `${HISTORY_STORAGE_KEY_PREFIX}:user:${userId}`
+}
+
+function readHistory(userId = getCurrentUserId()): MatchHistoryItem[] {
+  const raw = localStorage.getItem(buildHistoryStorageKey(userId))
   if (!raw) return []
 
   try {
@@ -15,8 +26,8 @@ function readHistory(): MatchHistoryItem[] {
   }
 }
 
-function writeHistory(items: MatchHistoryItem[]): void {
-  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(items))
+function writeHistory(items: MatchHistoryItem[], userId = getCurrentUserId()): void {
+  localStorage.setItem(buildHistoryStorageKey(userId), JSON.stringify(items))
 }
 
 export function getHistoryEntries(): MatchHistoryItem[] {
@@ -32,6 +43,7 @@ export interface AddHistoryEntryInput {
 }
 
 export function addHistoryEntry(input: AddHistoryEntryInput): MatchHistoryItem {
+  const userId = getCurrentUserId()
   const entry: MatchHistoryItem = {
     id: `${input.partidaId}-${Date.now()}`,
     partidaId: input.partidaId,
@@ -41,8 +53,8 @@ export function addHistoryEntry(input: AddHistoryEntryInput): MatchHistoryItem {
     finishedAt: input.finishedAt ?? new Date().toISOString(),
   }
 
-  const existing = readHistory()
+  const existing = readHistory(userId)
   existing.unshift(entry)
-  writeHistory(existing)
+  writeHistory(existing, userId)
   return entry
 }

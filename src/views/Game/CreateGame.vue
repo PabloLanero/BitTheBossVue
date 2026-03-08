@@ -7,16 +7,15 @@ import { usePartida } from '@/ApiCalls/usePartida'
 import type { CreatePartidaDTO } from '@/models/DTO/CreatePartidaDTO'
 import { getUserIdFromToken } from '@/utils/auth'
 import { useConstants } from '@/stores/Constants'
+import { readStoredSessionToken, updateSessionToken } from '@/services/unityBridge'
 
 const router = useRouter()
 const { t } = useI18n()
 const { createPartida } = usePartida()
-const { ApiUrl, SignalRHubPath } = useConstants()
+const { ApiUrl } = useConstants()
 
 const gameName = ref('')
-const opponentMode = ref<'ia' | 'player'>('ia')
 const difficulty = ref<'Easy' | 'Normal' | 'Hard'>('Normal')
-const rivalUserId = ref<number | null>(null)
 const INITIAL_MONEY_PLAYER1 = 100
 const INITIAL_MONEY_PLAYER2 = 100
 const loading = ref(false)
@@ -25,9 +24,7 @@ const errorMsg = ref('')
 const myUserId = ref<number | null>(null)
 
 const canCreate = computed(() => {
-  if (!gameName.value.trim() || myUserId.value === null) return false
-  if (opponentMode.value === 'player' && rivalUserId.value === null) return false
-  return true
+  return !!gameName.value.trim() && myUserId.value !== null
 })
 
 onMounted(() => {
@@ -53,7 +50,7 @@ async function handleCreate(): Promise<void> {
 
   try {
     const idPartida = buildIdPartida(gameName.value.trim())
-    const secondUser = opponentMode.value === 'player' ? (rivalUserId.value as number) : (myUserId.value as number)
+    const secondUser = myUserId.value as number
     const payload: CreatePartidaDTO = {
       idPartida,
       arrUsuario: [myUserId.value as number, secondUser],
@@ -63,12 +60,14 @@ async function handleCreate(): Promise<void> {
     await createPartida(payload)
 
     const difficultyLabel = t(`createGame.difficulty.${difficulty.value.toLowerCase()}`)
-    const opponentLabel =
-      opponentMode.value === 'ia'
-        ? t('createGame.opponentLabel.ai', { difficulty: difficultyLabel })
-        : t('createGame.opponentLabel.player', { id: secondUser })
+    const opponentLabel = t('createGame.opponentLabel.ai', { difficulty: difficultyLabel })
 
-    const token = localStorage.getItem('token') ?? ''
+    const token = readStoredSessionToken()
+    if (!token) {
+      throw new Error(t('createGame.errors.session'))
+    }
+
+    updateSessionToken(token)
     router.push({
       path: '/game',
       query: {
@@ -77,8 +76,6 @@ async function handleCreate(): Promise<void> {
         opponentLabel,
         token,
         apiBaseUrl: ApiUrl,
-        multiplayer: opponentMode.value === 'player' ? '1' : '0',
-        signalRHubUrl: `${ApiUrl}${SignalRHubPath}`,
         moneyPlayer1: String(INITIAL_MONEY_PLAYER1),
         moneyPlayer2: String(INITIAL_MONEY_PLAYER2),
       },
@@ -105,25 +102,12 @@ async function handleCreate(): Promise<void> {
         </label>
 
         <label>
-          {{ t('createGame.opponentMode') }}
-          <select v-model="opponentMode">
-            <option value="ia">{{ t('createGame.opponent.ai') }}</option>
-            <option value="player">{{ t('createGame.opponent.player') }}</option>
-          </select>
-        </label>
-
-        <label v-if="opponentMode === 'ia'">
           {{ t('createGame.aiDifficulty') }}
           <select v-model="difficulty">
             <option value="Easy">{{ t('createGame.difficulty.easy') }}</option>
             <option value="Normal">{{ t('createGame.difficulty.normal') }}</option>
             <option value="Hard">{{ t('createGame.difficulty.hard') }}</option>
           </select>
-        </label>
-
-        <label v-else>
-          {{ t('createGame.rivalUserId') }}
-          <input v-model.number="rivalUserId" type="number" min="1" required />
         </label>
 
         <p v-if="errorMsg" class="error">{{ errorMsg }}</p>

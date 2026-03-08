@@ -10,8 +10,8 @@
         <button class="finish-btn" type="button" @click="openExitModal">{{ t('unity.actions.endMatch') }}</button>
       </header>
 
-      <div class="unity-wrapper">
-        <canvas ref="canvasRef" id="unity-canvas"></canvas>
+      <div class="unity-wrapper" @contextmenu.prevent>
+        <canvas ref="canvasRef" id="unity-canvas" @contextmenu.prevent></canvas>
         <div v-if="loading" class="loading-overlay">
           <p>{{ t('unity.loading') }}</p>
         </div>
@@ -19,6 +19,18 @@
           <p>{{ t('unity.errorLoading', { error }) }}</p>
         </div>
       </div>
+
+      <section class="unity-tutorial">
+        <h2>{{ t('unity.tutorial.title') }}</h2>
+        <p class="unity-tutorial__intro">{{ t('unity.tutorial.intro') }}</p>
+        <ul class="unity-tutorial__list">
+          <li>{{ t('unity.tutorial.steps.selectBase') }}</li>
+          <li>{{ t('unity.tutorial.steps.spawnTroops') }}</li>
+          <li>{{ t('unity.tutorial.steps.selectTroops') }}</li>
+          <li>{{ t('unity.tutorial.steps.moveTroops') }}</li>
+          <li>{{ t('unity.tutorial.steps.winCondition') }}</li>
+        </ul>
+      </section>
 
       <div v-if="showExitModal" class="modal-backdrop">
         <div class="modal-card">
@@ -59,9 +71,9 @@ import {
   readStoredSessionToken,
   registerUnityInstance,
   sendTokenToUnity,
+  updateSessionToken,
   unregisterUnityInstance,
 } from '@/services/unityBridge'
-import { registerUnitySignalRBridge, unregisterUnitySignalRBridge } from '@/services/unitySignalRBridge'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const loading = ref(true)
@@ -74,6 +86,7 @@ const UNITY_LOADER_ID = 'unity-loader-script'
 const UNITY_BUILD_NAME = (import.meta.env.VITE_UNITY_BUILD_NAME || 'BuildUnity').trim()
 const UNITY_BUILD_BASE = `/unity/Build/${UNITY_BUILD_NAME}`
 const UNITY_LOADER_SRC = `${UNITY_BUILD_BASE}.loader.js`
+const TOKEN_SYNC_RETRY_DELAYS_MS = [0, 400, 1000, 2000]
 
 const route = useRoute()
 const router = useRouter()
@@ -101,6 +114,11 @@ declare global {
 let localUnityInstance: UnityInstance | null = null
 let hasUnityBooted = false
 let isTearingDown = false
+let tokenSyncTimeouts: Array<ReturnType<typeof window.setTimeout>> = []
+
+function preventContextMenu(event: Event): void {
+  event.preventDefault()
+}
 
 function devLog(message: string, details?: unknown): void {
   if (!import.meta.env.DEV) return
@@ -113,7 +131,26 @@ function devLog(message: string, details?: unknown): void {
 
 function onTokenChanged(event: Event): void {
   const customEvent = event as CustomEvent<string>
-  sendTokenToUnity(customEvent.detail ?? '')
+  scheduleTokenSync(customEvent.detail ?? '')
+}
+
+function clearTokenSyncRetries(): void {
+  for (let i = 0; i < tokenSyncTimeouts.length; i += 1) {
+    window.clearTimeout(tokenSyncTimeouts[i])
+  }
+  tokenSyncTimeouts = []
+}
+
+function scheduleTokenSync(token?: string | null): void {
+  const nextToken = (token ?? readStoredSessionToken()).trim()
+  clearTokenSyncRetries()
+
+  for (let i = 0; i < TOKEN_SYNC_RETRY_DELAYS_MS.length; i += 1) {
+    const timeoutId = window.setTimeout(() => {
+      sendTokenToUnity(nextToken, { force: true })
+    }, TOKEN_SYNC_RETRY_DELAYS_MS[i])
+    tokenSyncTimeouts.push(timeoutId)
+  }
 }
 
 function requestUnityPause(paused: boolean): void {
@@ -219,7 +256,7 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
     .then((unityInstance: UnityInstance) => {
       localUnityInstance = unityInstance
       registerUnityInstance(unityInstance)
-      sendTokenToUnity(readStoredSessionToken())
+      scheduleTokenSync(readStoredSessionToken())
       devLog('Unity initialized successfully')
       loading.value = false
     })
@@ -234,7 +271,12 @@ function initializeUnity(canvas: HTMLCanvasElement): void {
 }
 
 onMounted(async () => {
-  registerUnitySignalRBridge()
+  const tokenFromQuery = typeof route.query.token === 'string' ? route.query.token.trim() : ''
+  if (tokenFromQuery) {
+    updateSessionToken(tokenFromQuery)
+  }
+
+  window.addEventListener('contextmenu', preventContextMenu, { capture: true })
   window.addEventListener(TOKEN_CHANGED_EVENT, onTokenChanged as EventListener)
 
   try {
@@ -284,12 +326,14 @@ onMounted(async () => {
 })
 
 onBeforeRouteLeave(async () => {
+  clearTokenSyncRetries()
   await teardownUnity('route-leave')
 })
 
 onBeforeUnmount(() => {
+  clearTokenSyncRetries()
+  window.removeEventListener('contextmenu', preventContextMenu, true)
   window.removeEventListener(TOKEN_CHANGED_EVENT, onTokenChanged as EventListener)
-  unregisterUnitySignalRBridge()
   if (!isTearingDown) {
     void teardownUnity('component-unmount')
   }
@@ -390,6 +434,35 @@ onBeforeUnmount(() => {
 .error-overlay p {
   text-align: center;
   max-width: 80%;
+}
+
+.unity-tutorial {
+  margin-top: 14px;
+  border: 1px solid rgba(151, 254, 237, 0.28);
+  border-radius: 12px;
+  background: rgba(2, 8, 18, 0.55);
+  padding: 12px 14px;
+  color: #e6f8ff;
+}
+
+.unity-tutorial h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.unity-tutorial__intro {
+  margin: 6px 0 10px;
+  color: rgba(230, 248, 255, 0.86);
+  font-size: 0.92rem;
+}
+
+.unity-tutorial__list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: rgba(230, 248, 255, 0.92);
+  font-size: 0.9rem;
 }
 
 .modal-backdrop {
