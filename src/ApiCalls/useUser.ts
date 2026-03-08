@@ -1,32 +1,64 @@
-import type { Usuario } from "@/models/Usuario";
-
-import { useRegister } from "@/stores/Credentials";
-
-
-const { jwt, ApiUrl } = useRegister()
+import type { Usuario } from '@/models/Usuario'
+import { useConstants } from '@/stores/Constants'
 
 export const useUser = () => {
-    const urlUser = ApiUrl +'/Usuario'
+  const { ApiUrl } = useConstants()
+  const urlUser = `${ApiUrl}/Usuario`
 
-    async function getUsuarios(): Promise<Usuario[]>{
-        // Preparamos las credenciales
-        const cabecera : any = {}
-        cabecera['Accept'] = 'application/json'
-        cabecera['Authorization']= 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI2IiwidW5pcXVlX25hbWUiOiJVc2VyIiwicm9sZSI6IlVzdWFyaW8iLCJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20iLCJteUN1c3RvbUNsYWltIjoibXlDdXN0b21DbGFpbVZhbHVlIiwibmJmIjoxNzcyNzM2ODM2LCJleHAiOjE3NzMzNDE2MzYsImlhdCI6MTc3MjczNjgzNiwiaXNzIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6NzIzNyIsImF1ZCI6Imh0dHBzOi8vbG9jYWxob3N0OjcwMDAifQ.4q-ngUlpbdm0I1Dg1I_eqbVlU2yyUE6_Tf9sXO-Oqjs'
-        cabecera['Access-Control-Allow-Origin'] = '*'
-        cabecera['Access-Control-Allow-Methods'] = 'GET'
-        cabecera['Access-Control-Allow-Headers'] = "Origin, X-Requested-With, Content-Type, Accept"
-        
-        let response = await fetch(urlUser,{
-            // credentials: "include",
-            method:'GET',
-            headers: cabecera
-        }) 
+  function getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      throw new Error('No authentication token')
+    }
 
-        let result : Usuario[] = await response.json()
+    return {
+      Authorization: `Bearer ${token}`,
+    }
+  }
 
-        return result
-    } 
+  async function getUsuarios(): Promise<Usuario[]> {
+    const response = await fetch(urlUser, {
+      headers: getAuthHeaders(),
+    })
 
-    return { getUsuarios }
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Error fetching users' }))
+      throw new Error(error.message ?? 'Error fetching users')
+    }
+
+    return response.json()
+  }
+
+  async function getUsuarioById(id: number): Promise<Usuario> {
+    const response = await fetch(`${urlUser}/${id}`, {
+      headers: getAuthHeaders(),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Error fetching user' }))
+      throw new Error(error.message ?? 'Error fetching user')
+    }
+
+    return response.json()
+  }
+
+  async function updateUsuario(id: number, data: Partial<Usuario>): Promise<Usuario> {
+    const response = await fetch(`${urlUser}/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Error updating user' }))
+      throw new Error(error.message ?? 'Error updating user')
+    }
+
+    return response.json()
+  }
+
+  return { getUsuarios, getUsuarioById, updateUsuario }
 }
